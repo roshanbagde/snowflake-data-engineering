@@ -1,0 +1,142 @@
+Your Snowflake query is running slow.
+
+Before you even think about scaling your warehouse (and increasing cost), follow this structured, engineer-first approach to diagnose and fix performance.
+
+─────────────────────────
+🔍 STEP 1 — Start with Query Profile (Your Single Source of Truth)
+─────────────────────────
+→ Navigate: Snowflake UI → Query History → Select Query → Query Profile
+→ Analyze the operator tree carefully — this shows EXACT execution behavior, not assumptions
+
+Focus on these critical metrics first:
+• Partitions Scanned vs Total Partitions (pruning efficiency)
+• Bytes Spilled (Local & Remote)
+• Execution Time vs Queued Time
+• Scan vs Join vs Aggregate node timings
+
+💡 Pro tip: Expand the most expensive node — that's usually your bottleneck.
+
+─────────────────────────
+🔍 STEP 2 — Optimize Partition Pruning (Biggest ROI Fix)
+─────────────────────────
+→ If Partitions Scanned ≈ Total Partitions → full table scan (major red flag)
+
+Why this matters:
+Snowflake stores data in micro-partitions. Poor pruning = unnecessary I/O = slow queries.
+
+Fix strategies:
+• Filter on columns used in clustering (natural or defined)
+• Prefer high-cardinality columns (e.g., timestamps, IDs)
+• Avoid functions in WHERE clause:
+❌ WHERE DATE(order_ts) = '2024-01-01'
+✅ WHERE order_ts >= '2024-01-01' AND order_ts < '2024-01-02'
+• Define clustering keys for large tables (>500GB)
+• Periodically evaluate clustering depth using SYSTEM$CLUSTERING_INFORMATION
+
+─────────────────────────
+🔍 STEP 3 — Eliminate Disk Spilling (Silent Performance Killer)
+─────────────────────────
+→ Spilling = data exceeding memory → written to disk → huge slowdown
+
+Check:
+• Bytes Spilled to Local Storage
+• Bytes Spilled to Remote Storage (even worse)
+
+Fix BEFORE resizing warehouse:
+• Push filters as early as possible (predicate pushdown)
+• Avoid SELECT * — project only required columns
+• Break large transformations into staged CTEs or temp tables
+• Pre-aggregate data before joins when possible
+• Watch out for large window functions (can trigger spills)
+
+Only scale warehouse if these optimizations fail.
+
+─────────────────────────
+🔍 STEP 4 — Fix Join Strategy & Data Movement
+─────────────────────────
+→ Joins are often the most expensive operations
+
+Common issues:
+• Joining large unfiltered tables
+• Data redistribution across nodes
+• Skewed join keys
+
+Fix:
+• Filter large tables BEFORE join
+• Ensure join keys have good distribution (avoid skew)
+• Use appropriate join types (INNER vs LEFT when possible)
+• Reorder joins logically (even though optimizer helps, it's not perfect)
+• Materialize intermediate datasets if reuse is needed
+
+Example:
+WITH filtered_orders AS (
+SELECT id, customer_id
+FROM orders
+WHERE order_date >= '2024-01-01'
+)
+SELECT *
+FROM filtered_orders o
+JOIN customers c ON o.customer_id = c.id
+
+─────────────────────────
+🔍 STEP 5 — Leverage Caching Properly
+─────────────────────────
+Snowflake has 3 levels of caching:
+• Result Cache
+• Local Disk Cache
+• Remote Disk Cache
+
+If repeat queries aren’t fast:
+• Check USE_CACHED_RESULT parameter
+• Avoid non-deterministic functions (CURRENT_TIMESTAMP, RANDOM)
+• Ensure underlying data hasn’t changed
+
+Quick fix:
+ALTER SESSION SET USE_CACHED_RESULT = TRUE;
+
+💡 Result cache can return results in milliseconds — use it.
+
+─────────────────────────
+🔍 STEP 6 — Understand Queuing vs Compute Bottlenecks
+─────────────────────────
+→ If Queued Time > Execution Time → concurrency issue, NOT query issue
+
+Fix:
+• Enable Multi-Cluster Warehouse (best for concurrency)
+• Tune MAX_CLUSTER_COUNT based on workload
+• Avoid blindly scaling warehouse size — that only helps single-query performance
+
+─────────────────────────
+🔍 STEP 7 — Optimize Data Layout & Ingestion Patterns
+─────────────────────────
+→ Query performance is heavily influenced by how data is written
+
+Common problems:
+• Row-by-row inserts → fragmented micro-partitions
+• Poor clustering due to random load patterns
+
+Fix:
+• Use bulk loading (COPY INTO)
+• Use Snowpipe for streaming ingestion
+• Periodically RECLUSTER large tables if needed
+• Consider partition-aware staging before final load
+
+─────────────────────────
+🔍 STEP 8 — Advanced Query Tuning Techniques
+─────────────────────────
+• Use MATERIALIZED VIEWS for repeated aggregations
+• Use SEARCH OPTIMIZATION for selective point lookups
+• Avoid excessive DISTINCT — often replace with GROUP BY
+• Use APPROX_* functions for large-scale analytics when exactness isn’t required
+• Monitor query history trends — not just one query
+
+─────────────────────────
+🚨 Final Rule
+─────────────────────────
+Only AFTER optimizing: pruning, joins, spilling, and caching → THEN scale warehouse.
+
+Otherwise, you’re just paying more for inefficient queries.
+
+─────────────────────────
+
+#Snowflake #QueryTuning #DataEngineering #PerformanceOptimization #CloudCost #AnalyticsEngineering

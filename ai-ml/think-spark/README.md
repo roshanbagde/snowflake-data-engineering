@@ -2,13 +2,13 @@
 
 **A critical thinking and character development trainer for kids aged 5–18.**
 
-ThinkSpark is a local-first Streamlit app that helps facilitators, teachers, and parents run meaningful thinking sessions with children. It ships with 115+ hand-crafted questions across 10 life topics and 5 age groups — and can generate unlimited new ones via any major LLM. Everything runs on your machine; your data stays private.
+ThinkSpark is a local-first Streamlit app that helps facilitators, teachers, and parents run meaningful thinking sessions with children. It ships with 15 hand-crafted questions out of the box — run one script to load 115 total across 10 life topics and 5 age groups — and can generate unlimited new ones via any major LLM. Everything runs on your machine; your data stays private.
 
 ---
 
 ## Features
 
-- **📚 Question Bank** — 115+ seed questions across 10 topics and 5 age groups; add your own manually or via AI
+- **📚 Question Bank** — 15 questions included out of the box; run `add_questions.py` to load 100 more (115 total); add your own manually or via AI
 - **⭐ Favourites** — star questions and filter to your favourites by default
 - **🤖 AI Generator** — generate batches of questions using any LLM; review and save selectively
 - **📅 Session Builder** — create dated sessions, pick questions from the bank, export as Markdown

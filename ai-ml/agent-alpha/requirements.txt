@@ -1,0 +1,17 @@
+streamlit>=1.32.0
+python-dotenv>=1.0.0
+yfinance>=0.2.40
+pandas>=2.0.0
+openai>=1.40.0
+anthropic>=0.34.0
+google-generativeai>=0.8.0
+groq>=0.9.0
+mistralai>=1.0.0
+requests>=2.31.0
+# Framework integrations (for CrewAI and LangChain modes)
+crewai>=1.0.0
+langchain-core>=0.3.0
+langchain-openai>=0.2.0
+langchain-anthropic>=0.2.0
+langchain-google-genai>=2.0.0
+langchain-mistralai>=0.2.0

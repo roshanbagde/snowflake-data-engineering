@@ -34,6 +34,7 @@ snowflake-data-engineering/
 │   └── automation/               # Pipeline automation utilities
 │
 ├── 📂 ai-ml/
+│   ├── think-spark/              # Critical thinking trainer for kids (Streamlit + SQLite + Multi-LLM)
 │   ├── cortex-ai/                # Snowflake Cortex AI examples
 │   ├── llm-pipelines/            # LLM integration patterns
 │   └── ml-features/              # Feature engineering with Snowpark ML
@@ -65,6 +66,18 @@ snowflake-data-engineering/
 - [ ] Cortex AI — Calling LLMs directly from Snowflake SQL
 - [ ] Dynamic Tables — Real-time data transformation patterns
 - [ ] Python automation for Snowflake task monitoring
+
+---
+
+## 🤖 AI Projects
+
+AI-powered apps I've built — local-first, open source, no vendor lock-in. Lives under `ai-ml/` in this repo.
+
+| Project | Description | Stack |
+|---|---|---|
+| [💡 ThinkSpark](ai-ml/think-spark) | Critical thinking & character development trainer for kids aged 5–18. 115+ questions, AI generator, session builder, and classroom view. | Streamlit · SQLite · Multi-LLM |
+
+> More projects coming soon.
 
 ---
 

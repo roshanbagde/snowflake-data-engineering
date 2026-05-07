@@ -17,19 +17,20 @@ env/
 .env.*
 !.env.example
 
-# Database
+# Databases & vector stores
 *.db
 *.sqlite
 *.sqlite3
-data/*.db
+data/chroma/
 
 # Logs and runtime files
-logs/*.log
-logs/*.pid
+logs/
+!logs/.gitkeep
 *.log
 *.pid
+.streamlit.pid
 
-# Streamlit
+# Streamlit secrets
 .streamlit/secrets.toml
 
 # OS
@@ -41,3 +42,6 @@ Thumbs.db
 .idea/
 *.swp
 *.swo
+
+*.bak
+*.backup

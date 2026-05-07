@@ -457,6 +457,45 @@ def update_question(conn: sqlite3.Connection, qid: int, fields: Dict) -> None:
     conn.commit()
 
 
+def find_duplicate_question(conn: sqlite3.Connection, question_text: str) -> Optional[Dict]:
+    """Return an existing active question whose text matches (case-insensitive), or None."""
+    r = conn.execute(
+        "SELECT * FROM questions WHERE LOWER(TRIM(question_text)) = LOWER(TRIM(?)) LIMIT 1",
+        (question_text,),
+    ).fetchone()
+    return dict(r) if r else None
+
+
+def get_duplicate_groups(conn: sqlite3.Connection) -> List[List[Dict]]:
+    """Return groups of active questions that share the same normalised text."""
+    norm_texts = conn.execute("""
+        SELECT LOWER(TRIM(question_text)) AS norm_text
+        FROM questions
+        WHERE is_active = 1
+        GROUP BY LOWER(TRIM(question_text))
+        HAVING COUNT(*) > 1
+    """).fetchall()
+
+    groups: List[List[Dict]] = []
+    for row in norm_texts:
+        qs = conn.execute("""
+            SELECT q.*, t.name AS topic_name, ag.label AS age_group_label
+            FROM questions q
+            JOIN topics t  ON t.id  = q.topic_id
+            JOIN age_groups ag ON ag.id = q.age_group_id
+            WHERE LOWER(TRIM(q.question_text)) = ? AND q.is_active = 1
+            ORDER BY q.created_at ASC
+        """, (row["norm_text"],)).fetchall()
+        groups.append([dict(q) for q in qs])
+    return groups
+
+
+def delete_question(conn: sqlite3.Connection, qid: int) -> None:
+    """Hard-delete a question row."""
+    conn.execute("DELETE FROM questions WHERE id = ?", (qid,))
+    conn.commit()
+
+
 def deactivate_question(conn: sqlite3.Connection, qid: int) -> None:
     conn.execute("UPDATE questions SET is_active = 0 WHERE id = ?", (qid,))
     conn.commit()

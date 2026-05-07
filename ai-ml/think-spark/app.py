@@ -15,6 +15,7 @@ from src.database import (
     topic_id_map, age_group_id_map,
     get_questions, insert_question, update_question, deactivate_question, restore_question,
     toggle_favourite, count_questions, get_stats, QUESTION_TYPES, LEVELS, CURRICULUM,
+    find_duplicate_question, get_duplicate_groups, delete_question,
     create_session, get_sessions, get_session, update_session, delete_session,
     add_question_to_session, remove_question_from_session,
     get_session_questions, mark_question_used, reorder_session_questions,
@@ -142,20 +143,22 @@ h1, h2, h3, h4, h5, h6,
 # ── Session state ──────────────────────────────────────────────────────────────
 
 _defaults = {
-    "provider":          "Ollama (Local)",
-    "api_key":           "",
-    "gen_results":       [],      # AI generator staging area
-    "gen_approved":      [],      # booleans per generated question
-    "gen_saved":         [],      # booleans — True if already saved to DB
-    "gen_meta":          {},      # topic/ag/level/type used during generation
-    "classroom_mode":    False,
-    "cls_session_id":    None,
-    "cls_q_index":       0,
-    "cls_show_hint":     False,
-    "cls_show_disc":     False,
-    "cls_questions":     [],
-    "active_tab":        0,
-    "f_favourites_only": True,    # Tab 1 defaults to showing favourites only
+    "provider":           "Ollama (Local)",
+    "api_key":            "",
+    "gen_results":        [],      # AI generator staging area
+    "gen_approved":       [],      # booleans per generated question
+    "gen_saved":          [],      # booleans — True if already saved to DB
+    "gen_meta":           {},      # topic/ag/level/type used during generation
+    "classroom_mode":     False,
+    "cls_session_id":     None,
+    "cls_q_index":        0,
+    "cls_show_hint":      False,
+    "cls_show_disc":      False,
+    "cls_questions":      [],
+    "active_tab":         0,
+    "f_favourites_only":  True,    # Tab 1 defaults to showing favourites only
+    "upload_saved":       False,
+    "last_upload_name":   None,
 }
 for k, v in _defaults.items():
     if k not in st.session_state:
@@ -511,6 +514,356 @@ with tab1:
                     conn.close()
                     st.success("Question saved!")
                     st.rerun()
+
+    # ── Upload questions from JSON ─────────────────────────────────────────────
+    with st.expander("📤 Upload Questions from JSON"):
+        st.markdown(
+            "Upload a JSON file containing an array of question objects. "
+            "Required fields: `topic`, `age_group`, `level`, `type`, `question_text`."
+        )
+
+        # ── Sample prompt ──────────────────────────────────────────────────────
+        with st.expander("💡 How to generate questions with any AI model"):
+            st.markdown("Copy the prompt below, paste it into any AI (ChatGPT, Claude, Gemini, etc.), and upload the JSON it returns.")
+
+            _sample_prompt = f'''\
+Generate 10 critical-thinking questions for children and return them as a JSON array.
+Each item in the array must be a JSON object with exactly these fields:
+
+  "topic"               — must be exactly one of:
+                          {chr(10).join(f'                          • {t}' for t in topic_names)}
+
+  "age_group"           — must be exactly one of:
+                          • Seedlings   (ages 5–7)   simple language, play-based
+                          • Explorers   (ages 8–10)  story-based, cause & effect
+                          • Builders    (ages 11–13) real social situations
+                          • Challengers (ages 14–16) complex dilemmas, debate-ready
+                          • Leaders     (ages 17–18) real-world, advanced ethics
+
+  "level"               — must be exactly one of: simple | medium | hard
+
+  "type"                — must be exactly one of:
+                          scenario | dilemma | reflection | debate_starter |
+                          creative | what_if | puzzle
+
+  "question_text"       — the question itself (string, required)
+  "context"             — optional short scene-setter, or ""
+  "hint"                — a nudge for students, not the answer, or ""
+  "sample_answer"       — a model answer for the facilitator, or ""
+  "discussion_points"   — array of 3–4 follow-up prompts, or []
+  "follow_up_questions" — array of 1–2 deeper questions, or []
+  "tags"                — comma-separated keywords, or ""
+
+Rules:
+- Return ONLY the raw JSON array — no markdown fences, no explanation.
+- All field names must be lowercase exactly as shown above.
+- "discussion_points" and "follow_up_questions" must be JSON arrays, not strings.
+- Do not invent new topic or age_group values; use only the options listed above.
+
+Example of one correctly-formatted item:
+{{
+  "topic": "⚖️ Ethics & Values",
+  "age_group": "Builders",
+  "level": "medium",
+  "type": "dilemma",
+  "question_text": "You find a phone on the street with no lock screen. What do you do?",
+  "context": "You are walking home from school.",
+  "hint": "Think about how the owner might be feeling right now.",
+  "sample_answer": "Hand it in to the nearest police station or try to contact someone in the phone's contacts.",
+  "discussion_points": [
+    "Why is it important to return lost property?",
+    "What would you want someone to do if they found your phone?",
+    "Does it matter if the phone is expensive or cheap?"
+  ],
+  "follow_up_questions": [
+    "What if there was money in a wallet next to the phone?",
+    "Would your answer change if you really needed a phone yourself?"
+  ],
+  "tags": "honesty,integrity,ethics,decisions"
+}}'''
+
+            st.code(_sample_prompt, language=None)
+            st.caption("✂️ Copy the prompt above → paste into any AI → then use one of the two input options below.")
+
+        st.divider()
+
+        # Two input methods: file upload OR paste raw JSON
+        input_method = st.radio(
+            "How do you want to provide the JSON?",
+            ["📁 Upload a .json file", "📋 Paste JSON directly"],
+            horizontal=True,
+            key="upload_input_method",
+        )
+
+        raw_data = None
+
+        if input_method == "📁 Upload a .json file":
+            uploaded_file = st.file_uploader("Choose a JSON file", type=["json"], key="upload_json")
+            if uploaded_file:
+                if st.session_state.last_upload_name != uploaded_file.name:
+                    st.session_state.last_upload_name = uploaded_file.name
+                    st.session_state.upload_saved = False
+                try:
+                    raw_data = json.load(uploaded_file)
+                except json.JSONDecodeError as exc:
+                    st.error(f"Invalid JSON: {exc}")
+
+        else:
+            pasted = st.text_area(
+                "Paste the JSON array here:",
+                height=200,
+                placeholder='[\n  {\n    "topic": "⚖️ Ethics & Values",\n    "age_group": "Builders",\n    ...\n  }\n]',
+                key="upload_paste_text",
+            )
+            if pasted.strip():
+                # Reset saved flag when the pasted content changes
+                paste_key = str(len(pasted))
+                if st.session_state.last_upload_name != paste_key:
+                    st.session_state.last_upload_name = paste_key
+                    st.session_state.upload_saved = False
+                try:
+                    raw_data = json.loads(pasted)
+                except json.JSONDecodeError as exc:
+                    st.error(f"Invalid JSON: {exc}")
+
+        if raw_data is not None:
+            if not isinstance(raw_data, list):
+                st.error("JSON must be a top-level array `[ ... ]` of question objects.")
+            else:
+                valid_qs: list   = []
+                invalid_qs: list = []
+
+                for i, q in enumerate(raw_data):
+                    errs = []
+                    if not isinstance(q, dict):
+                        errs.append("Item is not an object")
+                    else:
+                        if not q.get("question_text", "").strip():
+                            errs.append("`question_text` is required and cannot be empty")
+                        if q.get("topic") not in topic_names:
+                            errs.append(f"`topic` `{q.get('topic')}` is not a valid topic")
+                        if q.get("age_group") not in ag_labels:
+                            errs.append(
+                                f"`age_group` `{q.get('age_group')}` must be one of: "
+                                + ", ".join(ag_labels)
+                            )
+                        if q.get("level") not in LEVELS:
+                            errs.append(
+                                f"`level` `{q.get('level')}` must be one of: "
+                                + ", ".join(LEVELS)
+                            )
+                        if q.get("type") not in QUESTION_TYPES:
+                            errs.append(
+                                f"`type` `{q.get('type')}` must be one of: "
+                                + ", ".join(QUESTION_TYPES)
+                            )
+                    if errs:
+                        invalid_qs.append((i, q, errs))
+                    else:
+                        valid_qs.append((i, q))
+
+                # Check for duplicates against the DB
+                conn_chk = connect()
+                new_qs  = []   # (orig_index, q)
+                dupe_qs = []   # (orig_index, q, existing_id)
+                for i_v, q_v in valid_qs:
+                    existing = find_duplicate_question(conn_chk, q_v["question_text"])
+                    if existing:
+                        dupe_qs.append((i_v, q_v, existing["id"]))
+                    else:
+                        new_qs.append((i_v, q_v))
+                conn_chk.close()
+
+                # Summary counts
+                uc1, uc2, uc3, uc4 = st.columns(4)
+                uc1.metric("Total in file", len(raw_data))
+                uc2.metric("🆕 New",         len(new_qs))
+                uc3.metric("🔁 Duplicates",  len(dupe_qs))
+                uc4.metric("⚠️ Invalid",     len(invalid_qs))
+
+                # Invalid details
+                if invalid_qs:
+                    with st.expander(f"⚠️ {len(invalid_qs)} invalid question(s) — will be skipped"):
+                        for idx_inv, q_inv, errs in invalid_qs:
+                            q_text = (
+                                q_inv.get("question_text", "—")[:80]
+                                if isinstance(q_inv, dict) else str(q_inv)[:80]
+                            )
+                            st.markdown(f"**Item {idx_inv + 1}:** {q_text}")
+                            for err in errs:
+                                st.markdown(f"&nbsp;&nbsp;• {err}")
+
+                # Duplicate details
+                if dupe_qs:
+                    with st.expander(f"🔁 {len(dupe_qs)} duplicate(s) — already in your bank (will be skipped)"):
+                        for idx_d, q_d, exist_id in dupe_qs:
+                            st.markdown(
+                                f'<span class="badge" style="background:#2a1a00;color:#ffaa44;">duplicate</span> '
+                                f'**Q{idx_d + 1}:** {q_d["question_text"][:80]} '
+                                f'<span style="color:#556688;font-size:.8rem;">(DB ID #{exist_id})</span>',
+                                unsafe_allow_html=True,
+                            )
+
+                # Valid + new question preview
+                if new_qs:
+                    st.markdown(f"#### Preview — {len(new_qs)} new question(s) to add")
+                    for idx_v, q_v in new_qs:
+                        lvl_cls = {
+                            "simple": "badge-simple",
+                            "medium": "badge-medium",
+                            "hard":   "badge-hard",
+                        }.get(q_v.get("level", ""), "badge-type")
+                        q_preview = q_v["question_text"]
+                        label = (q_preview[:90] + "…") if len(q_preview) > 90 else q_preview
+                        with st.expander(f"Q{idx_v + 1}: {label}"):
+                            st.markdown(
+                                f'<span class="badge {lvl_cls}">{q_v.get("level","")}</span>'
+                                f'<span class="badge badge-type">{q_v.get("type","")}</span>'
+                                f'<span class="badge" style="background:#1a1a2e;color:#8899cc;">'
+                                f'{q_v.get("age_group","")}</span>'
+                                f'<span class="badge badge-source">{q_v.get("topic","")}</span>',
+                                unsafe_allow_html=True,
+                            )
+                            if q_v.get("context"):
+                                st.markdown(f"*{q_v['context']}*")
+                            st.markdown(f"**{q_v['question_text']}**")
+                            if q_v.get("hint"):
+                                st.markdown(f"**Hint:** {q_v['hint']}")
+                            if q_v.get("sample_answer"):
+                                with st.expander("📝 Sample Answer"):
+                                    st.write(q_v["sample_answer"])
+                            if q_v.get("discussion_points"):
+                                st.markdown("**Discussion Points:**")
+                                for dp in q_v["discussion_points"]:
+                                    st.markdown(f"  - {dp}")
+                            if q_v.get("follow_up_questions"):
+                                st.markdown("**Follow-up Questions:**")
+                                for fq in q_v["follow_up_questions"]:
+                                    st.markdown(f"  - {fq}")
+                            if q_v.get("tags"):
+                                st.caption(f"Tags: {q_v['tags']}")
+
+                    st.divider()
+
+                    if st.session_state.upload_saved:
+                        st.success(
+                            f"✅ {len(new_qs)} new question(s) saved. "
+                            f"{len(dupe_qs)} duplicate(s) skipped. "
+                            "Upload another file to add more."
+                        )
+                    else:
+                        if st.button(
+                            f"💾 Save {len(new_qs)} new question(s) to Question Bank"
+                            + (f" ({len(dupe_qs)} duplicates will be skipped)" if dupe_qs else ""),
+                            type="primary",
+                            use_container_width=True,
+                            key="save_upload_btn",
+                        ):
+                            conn = connect()
+                            for _, q_s in new_qs:
+                                dp  = q_s.get("discussion_points",   [])
+                                fuq = q_s.get("follow_up_questions", [])
+                                if isinstance(dp, str):
+                                    dp = [dp]
+                                if isinstance(fuq, str):
+                                    fuq = [fuq]
+                                insert_question(conn, {
+                                    "topic_id":            tid_map[q_s["topic"]],
+                                    "age_group_id":        agid_map[q_s["age_group"]],
+                                    "level":               q_s["level"],
+                                    "question_type":       q_s["type"],
+                                    "question_text":       q_s["question_text"].strip(),
+                                    "context":             q_s.get("context", ""),
+                                    "hint":                q_s.get("hint", ""),
+                                    "sample_answer":       q_s.get("sample_answer", ""),
+                                    "discussion_points":   dp,
+                                    "follow_up_questions": fuq,
+                                    "tags":                q_s.get("tags", ""),
+                                }, source="uploaded")
+                            conn.close()
+                            st.session_state.upload_saved = True
+                            st.success(f"✅ {len(new_qs)} question(s) saved!")
+                            st.rerun()
+
+                elif valid_qs and not new_qs:
+                    st.info("All questions in this file already exist in your bank — nothing new to add.")
+                else:
+                    st.warning("No valid questions found in the file.")
+
+    # ── Find & remove duplicates ───────────────────────────────────────────────
+    with st.expander("🔍 Find & Remove Duplicates"):
+        if st.button("Scan for duplicates", key="scan_dupes_btn"):
+            st.session_state["dupe_scan_done"] = True
+
+        if st.session_state.get("dupe_scan_done"):
+            conn_d = connect()
+            dupe_groups = get_duplicate_groups(conn_d)
+            conn_d.close()
+
+            if not dupe_groups:
+                st.success("✅ No duplicates found — your Question Bank is clean.")
+            else:
+                total_extra = sum(len(g) - 1 for g in dupe_groups)
+                st.warning(
+                    f"Found **{len(dupe_groups)}** duplicate group(s) — "
+                    f"**{total_extra}** extra copy/copies can be removed."
+                )
+
+                # One-click nuke all extras (keeps oldest in each group)
+                if st.button(
+                    f"🗑️ Delete all {total_extra} duplicate(s) — keep oldest in each group",
+                    type="primary",
+                    key="delete_all_dupes_btn",
+                ):
+                    conn_d = connect()
+                    deleted = 0
+                    for grp in dupe_groups:
+                        for extra in grp[1:]:   # grp[0] is oldest (ORDER BY created_at ASC)
+                            delete_question(conn_d, extra["id"])
+                            deleted += 1
+                    conn_d.close()
+                    st.session_state["dupe_scan_done"] = False
+                    st.success(f"Deleted {deleted} duplicate(s).")
+                    st.rerun()
+
+                st.divider()
+
+                # Per-group review
+                for g_idx, grp in enumerate(dupe_groups):
+                    q0 = grp[0]
+                    with st.expander(
+                        f"Group {g_idx + 1}: {q0['question_text'][:80]}… "
+                        f"({len(grp)} copies)"
+                    ):
+                        for copy_idx, gq in enumerate(grp):
+                            lvl_cls = {
+                                "simple": "badge-simple",
+                                "medium": "badge-medium",
+                                "hard":   "badge-hard",
+                            }.get(gq.get("level", ""), "badge-type")
+                            keep_badge = (
+                                '<span class="badge" style="background:#0d2b1a;color:#00d26a;">keep</span> '
+                                if copy_idx == 0 else ""
+                            )
+                            st.markdown(
+                                f'{keep_badge}'
+                                f'<span class="badge {lvl_cls}">{gq["level"]}</span> '
+                                f'<span class="badge badge-source">{gq["source"]}</span> '
+                                f'ID #{gq["id"]} · added {gq["created_at"][:10]}',
+                                unsafe_allow_html=True,
+                            )
+                            if copy_idx > 0:
+                                if st.button(
+                                    f"🗑️ Delete this copy (ID #{gq['id']})",
+                                    key=f"del_dupe_{gq['id']}",
+                                ):
+                                    conn_d = connect()
+                                    delete_question(conn_d, gq["id"])
+                                    conn_d.close()
+                                    st.session_state["dupe_scan_done"] = False
+                                    st.success(f"Deleted ID #{gq['id']}.")
+                                    st.rerun()
+                            st.markdown("---")
 
     st.divider()
 

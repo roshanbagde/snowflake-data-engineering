@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    width:1200px; height:1180px;
+    font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;
+    background:radial-gradient(circle at 30% 0%, #102a43 0%, #0a1929 60%, #060f1a 100%);
+    color:#e6edf3; padding:70px 64px; position:relative; overflow:hidden;
+  }
+  .glow { position:absolute; width:600px; height:600px; border-radius:50%;
+          background:radial-gradient(circle,#29b5e8 0%,transparent 70%);
+          opacity:.18; top:-200px; right:-150px; filter:blur(30px); }
+  .eyebrow { color:#29b5e8; font-weight:700; letter-spacing:3px; font-size:22px; text-transform:uppercase; }
+  h1 { font-size:62px; line-height:1.05; margin:14px 0 8px; font-weight:800; }
+  h1 .code { color:#29b5e8; font-family:'SF Mono',Menlo,monospace; }
+  .sub { font-size:26px; color:#9fb3c8; margin-bottom:46px; }
+
+  .label-row { display:flex; justify-content:space-between; margin-bottom:14px; font-size:22px; font-weight:700; }
+  .label-row .frozen { color:#7aa7d6; }
+  .label-row .mutable { color:#3ddc84; }
+
+  .timeline { display:flex; height:150px; border-radius:18px; overflow:hidden; box-shadow:0 12px 40px rgba(0,0,0,.5); }
+  .seg { display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; }
+  .seg .big { font-size:46px; font-weight:800; }
+  .seg .small { font-size:20px; opacity:.85; margin-top:4px; }
+  .frozen-seg { flex:0 0 78%; background:linear-gradient(135deg,#1c3a5e,#274d77);
+                color:#bcd4ee; border-right:3px dashed #29b5e8; }
+  .mutable-seg { flex:1; background:linear-gradient(135deg,#16a34a,#22c55e); color:#06281a; }
+  .lock { font-size:40px; margin-bottom:6px; }
+
+  .predicate { text-align:center; margin:22px 0 4px; }
+  .predicate .arrow { color:#29b5e8; font-size:30px; }
+  .predicate code { display:inline-block; margin-top:8px; background:#0b1f33; border:1px solid #1f4060;
+       padding:14px 22px; border-radius:12px; font-family:'SF Mono',Menlo,monospace;
+       font-size:24px; color:#9be7ff; }
+  .predicate code b { color:#29b5e8; }
+
+  .compare { display:flex; gap:28px; margin-top:54px; }
+  .card { flex:1; border-radius:18px; padding:30px 30px 34px; border:1px solid #1f3b57; background:#0c1d30; }
+  .card h3 { font-size:24px; margin-bottom:20px; display:flex; align-items:center; gap:10px; }
+  .card .tag { font-size:15px; font-weight:700; padding:5px 12px; border-radius:20px; }
+  .without .tag { background:#3b1318; color:#ff8a8a; }
+  .with .tag { background:#0e2f1f; color:#3ddc84; }
+  .bar { height:54px; border-radius:10px; display:flex; align-items:center; padding-left:18px;
+         font-weight:700; font-size:21px; margin-top:8px; }
+  .bar-full { background:linear-gradient(90deg,#dc2626,#ef4444); color:#fff; }
+  .bar-slice { background:#13243a; color:#7aa7d6; position:relative; overflow:hidden; }
+  .bar-slice .hot { position:absolute; right:0; top:0; bottom:0; width:18%;
+        background:linear-gradient(90deg,#16a34a,#22c55e); display:flex; align-items:center;
+        justify-content:center; color:#06281a; font-size:16px; }
+  .metric { margin-top:22px; font-size:22px; color:#9fb3c8; }
+  .metric b { font-size:40px; display:block; color:#fff; margin-top:2px; }
+  .with .metric b { color:#3ddc84; }
+  .without .metric b { color:#ff6b6b; }
+
+  .footer { position:absolute; bottom:46px; left:64px; right:64px; display:flex;
+            justify-content:space-between; align-items:center; font-size:20px; color:#5b7186; }
+  .footer .brand { color:#29b5e8; font-weight:700; }
+</style>
+</head>
+<body>
+  <div class="glow"></div>
+
+  <div class="eyebrow">❄️ Snowflake Dynamic Tables</div>
+  <h1>Freeze the past.<br><span class="code">IMMUTABLE WHERE</span></h1>
+  <div class="sub">Tell Snowflake which rows never change — and stop paying to recompute them.</div>
+
+  <div class="label-row">
+    <span class="frozen">◀ Historical data (5 years)</span>
+    <span class="mutable">Last 30 days ▶</span>
+  </div>
+  <div class="timeline">
+    <div class="seg frozen-seg">
+      <div class="lock">🔒</div>
+      <div class="big">FROZEN</div>
+      <div class="small">skipped on every refresh</div>
+    </div>
+    <div class="seg mutable-seg">
+      <div class="big">LIVE</div>
+      <div class="small">recomputed</div>
+    </div>
+  </div>
+
+  <div class="predicate">
+    <div class="arrow">▲ the boundary you define</div>
+    <code>IMMUTABLE WHERE (order_date &lt; CURRENT_TIMESTAMP() - INTERVAL <b>'30 days'</b>)</code>
+  </div>
+
+  <div class="compare">
+    <div class="card without">
+      <h3>Without <span class="tag">every refresh</span></h3>
+      <div class="bar bar-full">Recompute ALL rows</div>
+      <div class="metric">Rows scanned per refresh<b>1.8 B</b></div>
+    </div>
+    <div class="card with">
+      <h3>With <span class="tag">IMMUTABLE WHERE</span></h3>
+      <div class="bar bar-slice">frozen — skipped<div class="hot">scan</div></div>
+      <div class="metric">Rows scanned per refresh<b>12 M</b></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>Works in incremental <i>and</i> full refresh mode</span>
+    <span class="brand">@roshanbagde</span>
+  </div>
+</body>
+</html>

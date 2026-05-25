@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Snowflake Dynamic Tables — Cheat Sheet</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{width:1400px;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;
+       background:#0a1929;color:#e6edf3;padding:56px 56px 64px;}
+  header{display:flex;align-items:baseline;gap:16px;border-bottom:2px solid #1f4060;padding-bottom:20px;margin-bottom:30px;}
+  header h1{font-size:42px;font-weight:800;}
+  header h1 .c{color:#29b5e8;}
+  header .tag{margin-left:auto;color:#5b7186;font-size:18px;}
+  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:22px;}
+  .card{background:#0c1d30;border:1px solid #1f3b57;border-radius:14px;padding:22px 24px;}
+  .card.span2{grid-column:span 2;}
+  .card h2{font-size:21px;color:#29b5e8;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  code,pre{font-family:'SF Mono',Menlo,Consolas,monospace;}
+  pre{background:#08111d;border:1px solid #15314e;border-radius:8px;padding:14px 16px;
+      font-size:14.5px;line-height:1.55;color:#cfe6ff;overflow-x:auto;white-space:pre;}
+  pre .k{color:#29b5e8;font-weight:700;} pre .s{color:#3ddc84;} pre .c2{color:#5b7186;}
+  ul{list-style:none;} li{font-size:15.5px;line-height:1.7;padding-left:22px;position:relative;}
+  li::before{content:'▸';color:#29b5e8;position:absolute;left:0;}
+  .ok::before{content:'✅';left:0;} .no::before{content:'⛔';left:0;} .warn::before{content:'⚠️';left:0;}
+  table{width:100%;border-collapse:collapse;font-size:14.5px;}
+  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid #15314e;vertical-align:top;}
+  th{color:#7aa7d6;font-size:13px;text-transform:uppercase;letter-spacing:.5px;}
+  td code{color:#9be7ff;background:#08111d;padding:2px 6px;border-radius:5px;}
+  .pill{display:inline-block;font-size:12px;font-weight:700;padding:3px 9px;border-radius:12px;margin-left:6px;}
+  .pill.new{background:#0e2f1f;color:#3ddc84;}
+  footer{margin-top:30px;color:#5b7186;font-size:15px;display:flex;justify-content:space-between;}
+  footer .brand{color:#29b5e8;font-weight:700;}
+</style>
+</head>
+<body>
+<header>
+  <h1>❄️ Snowflake <span class="c">Dynamic Tables</span> — Cheat Sheet</h1>
+  <span class="tag">verified vs docs · May 2026</span>
+</header>
+
+<div class="grid">
+
+  <div class="card span2">
+    <h2>⚙️ Anatomy</h2>
+<pre><span class="k">CREATE OR REPLACE DYNAMIC TABLE</span> my_table
+  <span class="k">TARGET_LAG</span>   = <span class="s">'5 minutes'</span> | <span class="k">DOWNSTREAM</span>   <span class="c2">-- min 60s</span>
+  <span class="k">WAREHOUSE</span>    = transform_wh
+  <span class="k">REFRESH_MODE</span> = AUTO | FULL | INCREMENTAL  <span class="c2">-- AUTO = default</span>
+  <span class="k">INITIALIZE</span>   = ON_CREATE | ON_SCHEDULE
+  <span class="k">IMMUTABLE WHERE</span> (order_ts &lt; <span class="k">CURRENT_TIMESTAMP</span>() - <span class="k">INTERVAL</span> <span class="s">'30 days'</span>)
+  <span class="k">BACKFILL FROM</span> history_table
+<span class="k">AS</span> <span class="k">SELECT</span> ... <span class="k">FROM</span> base;</pre>
+  </div>
+
+  <div class="card">
+    <h2>⏱️ TARGET_LAG = DOWNSTREAM</h2>
+    <ul>
+      <li>Freshness <b>goal</b>, not a cron.</li>
+      <li>Set a real number only on <b>leaf / mart</b> tables.</li>
+      <li><code>DOWNSTREAM</code> on intermediates → they self-tune to consumers.</li>
+      <li>Stops paying to refresh tables nobody needs fresh.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>🔁 Refresh modes — the trap</h2>
+    <ul>
+      <li><code>AUTO</code> picks INCREMENTAL/FULL <b>once at create</b>, then locks.</li>
+      <li class="warn">Unsupported SQL → <b>silent</b> FULL refresh forever.</li>
+      <li class="ok">Audit <code>refresh_mode_reason</code> after every deploy.</li>
+      <li>Force <code>INCREMENTAL</code> = loud error instead of silent FULL.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>🔒 IMMUTABLE WHERE <span class="pill new">recent</span></h2>
+    <ul>
+      <li>Freeze rows that match → skipped on every refresh.</li>
+      <li>1st refresh ignores it; later refreshes touch only mutable rows.</li>
+      <li>Works in incremental <i>and</i> full mode.</li>
+      <li class="no">No subqueries / UDFs / non-deterministic fns.</li>
+      <li>Check via <code>METADATA$IS_IMMUTABLE</code>.</li>
+    </ul>
+  </div>
+
+  <div class="card span2">
+    <h2>🧮 Incremental compatibility</h2>
+    <table>
+      <tr><th>Stays incremental</th><th>Locality-sensitive</th><th>Forces FULL — avoid</th></tr>
+      <tr>
+        <td><code>SELECT</code> <code>WHERE</code> <code>FROM base</code><br><code>UNION ALL</code><br><code>LATERAL FLATTEN</code><br><code>QUALIFY ROW_NUMBER()=1</code></td>
+        <td><code>INNER/OUTER JOIN</code><br><code>GROUP BY</code><br><code>DISTINCT</code><br>window fns w/ <code>PARTITION BY</code></td>
+        <td><code>EXCEPT</code> <code>INTERSECT</code><br>exact <code>PERCENTILE_CONT</code> / median<br>ungrouped scalar aggregates<br>window fns w/o <code>PARTITION BY</code></td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>📦 BACKFILL FROM <span class="pill new">recent</span></h2>
+    <ul>
+      <li>Zero-copy adopt computed rows (no recompute).</li>
+      <li>Requires an <code>IMMUTABLE WHERE</code> (frozen rows only).</li>
+      <li>Clustering keys must match the source.</li>
+      <li>Migrate pipelines / evolve a definition cheaply.</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>📊 Monitor</h2>
+    <ul>
+      <li><code>SHOW DYNAMIC TABLES</code> — quick status</li>
+      <li><code>DYNAMIC_TABLES()</code> — lag ratios (7d)</li>
+      <li><code>..._REFRESH_HISTORY()</code> — per refresh (7d)</li>
+      <li><code>..._GRAPH_HISTORY()</code> — the DAG</li>
+      <li><code>ACCOUNT_USAGE</code> view — 365d trends</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>🛠️ Manage</h2>
+<pre><span class="k">ALTER DYNAMIC TABLE</span> t
+  <span class="k">SET TARGET_LAG</span>=<span class="s">'1 hour'</span>;
+<span class="k">ALTER ...</span> SUSPEND | RESUME;
+<span class="k">ALTER ...</span> REFRESH;   <span class="c2">-- now</span>
+<span class="k">CREATE ...</span> CLONE t;
+<span class="k">SELECT</span> GET_DDL(<span class="s">'TABLE'</span>,<span class="s">'t'</span>);</pre>
+  </div>
+
+  <div class="card span2">
+    <h2>💰 Cost levers (highest impact first)</h2>
+    <ul>
+      <li class="ok">Loosen <code>TARGET_LAG</code>; <code>DOWNSTREAM</code> on intermediates</li>
+      <li class="ok">Confirm INCREMENTAL (don't pay for silent FULL)</li>
+      <li class="ok">Write incremental-friendly SQL</li>
+      <li class="ok"><code>IMMUTABLE WHERE</code> on append-only / time-partitioned data</li>
+      <li class="ok"><code>BACKFILL FROM</code> instead of recomputing history</li>
+      <li class="ok">Right-size the warehouse (watch for spill)</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>🆚 vs alternatives</h2>
+    <ul>
+      <li><b>Dynamic table:</b> declarative multi-step + SLA</li>
+      <li><b>Mat. view:</b> single-table simple aggregate</li>
+      <li><b>Stream+Task:</b> imperative / custom MERGE</li>
+      <li><b>View:</b> always-fresh, compute on read</li>
+    </ul>
+  </div>
+
+</div>
+
+<footer>
+  <span>github.com/roshanbagde/snowflake-data-engineering · snowflake/dynamic-tables</span>
+  <span class="brand">@roshanbagde</span>
+</footer>
+</body>
+</html>

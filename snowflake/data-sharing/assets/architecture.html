@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Snowflake Data Sharing — Architecture</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{width:1400px;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;
+       background:radial-gradient(circle at 25% 0%,#102a43 0%,#0a1929 55%,#060f1a 100%);
+       color:#e6edf3;padding:54px 56px 60px;position:relative;overflow:hidden;}
+  .glow{position:absolute;width:680px;height:680px;border-radius:50%;
+        background:radial-gradient(circle,#29b5e8 0,transparent 70%);opacity:.16;top:-260px;right:-180px;filter:blur(30px);}
+  .eyebrow{color:#29b5e8;font-weight:700;letter-spacing:3px;font-size:20px;text-transform:uppercase;}
+  h1{font-size:48px;font-weight:800;margin:12px 0 6px;}
+  .sub{font-size:23px;color:#9fb3c8;margin-bottom:40px;}
+  .sub b{color:#cfe3f7;}
+
+  .band{display:flex;align-items:center;gap:0;margin-bottom:26px;
+        background:#0b1828;border:1px solid #17314e;border-radius:16px;padding:24px 26px;}
+  .band .tag{writing-mode:vertical-rl;transform:rotate(180deg);font-size:15px;font-weight:800;
+             letter-spacing:2px;color:#29b5e8;text-transform:uppercase;padding-right:20px;margin-right:22px;
+             border-right:2px solid #1f4060;}
+  .band.x .tag{color:#3ddc84;border-color:#1e5538;}
+  .band.dr .tag{color:#ffb86b;border-color:#5b4326;}
+
+  .node{background:#0e2236;border:1px solid #20405f;border-radius:14px;padding:18px 22px;min-width:200px;}
+  .node h3{font-size:21px;font-weight:800;display:flex;align-items:center;gap:8px;}
+  .node .lines{font-size:15.5px;color:#9fb3c8;margin-top:8px;line-height:1.55;}
+  .node code{font-family:'SF Mono',Menlo,monospace;color:#9be7ff;font-size:14px;}
+  .node .pays{margin-top:10px;font-size:13px;font-weight:700;color:#7aa7d6;letter-spacing:.5px;}
+  .node.provider{border-color:#2a557f;}
+  .node.consumer{border-color:#1e5538;}
+  .node.ssa{border-color:#3a5a2e;background:#10220f;}
+  .node.dr{border-color:#5b4326;background:#221a0f;}
+
+  .arrow{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 14px;min-width:170px;}
+  .arrow .lbl{font-size:14px;font-weight:700;color:#29b5e8;text-align:center;margin-bottom:6px;line-height:1.3;}
+  .arrow .lbl.no{color:#ff8a8a;}
+  .arrow .line{width:100%;height:3px;background:linear-gradient(90deg,#29b5e8,#3ddc84);position:relative;border-radius:2px;}
+  .arrow .line::after{content:'▶';position:absolute;right:-4px;top:-9px;color:#3ddc84;font-size:18px;}
+
+  .footnote{margin-top:18px;font-size:17px;color:#7aa7d6;text-align:center;}
+  .footnote b{color:#cfe3f7;}
+  .foot{margin-top:30px;display:flex;justify-content:space-between;color:#5b7186;font-size:16px;}
+  .foot .brand{color:#29b5e8;font-weight:700;}
+</style>
+</head>
+<body>
+<div class="glow"></div>
+<div class="eyebrow">❄️ Snowflake Secure Data Sharing</div>
+<h1>How data sharing actually works</h1>
+<div class="sub">Live, read-only access to your objects — <b>no data is copied</b>. Just metadata + grants.</div>
+
+<!-- Band 1: same region direct share -->
+<div class="band">
+  <div class="tag">Direct&nbsp;Share</div>
+  <div class="node provider"><h3>🏢 Provider</h3>
+    <div class="lines">DB → <code>SECURE VIEW</code><br>wrapped in a <code>SHARE</code></div>
+    <div class="pays">PAYS FOR STORAGE</div></div>
+  <div class="arrow"><div class="lbl no">SHARE = metadata + grants<br>NO DATA COPIED</div><div class="line"></div></div>
+  <div class="node consumer"><h3>👥 Consumer</h3>
+    <div class="lines"><code>CREATE DATABASE … FROM SHARE</code><br>queries it <b>read-only</b></div>
+    <div class="pays">PAYS FOR COMPUTE</div></div>
+  <div style="flex:.4"></div>
+</div>
+<div class="footnote">Same region + same cloud only. Always current — provider's changes show instantly.</div>
+
+<!-- Band 2: cross region via listing + auto-fulfillment -->
+<div class="band x" style="margin-top:26px;">
+  <div class="tag">Cross-Region</div>
+  <div class="node provider"><h3>🏢 Provider</h3>
+    <div class="lines"><code>LISTING</code> (share + YAML)<br>auto-fulfillment ON</div></div>
+  <div class="arrow"><div class="lbl">Snowflake replicates<br>on demand</div><div class="line"></div></div>
+  <div class="node ssa"><h3>📦 Secure Share Area</h3>
+    <div class="lines">Snowflake-managed replica<br>in the consumer's region</div></div>
+  <div class="arrow"><div class="lbl">consumer region</div><div class="line"></div></div>
+  <div class="node consumer"><h3>👥 Consumer</h3>
+    <div class="lines">other region / cloud<br>read-only, same model</div></div>
+</div>
+<div class="footnote">Cost = <b>storage</b> (per region) + <b>compute</b> (per refresh) + <b>cross-region transfer</b>. Refresh frequency is the dial.</div>
+
+<!-- Band 3: DR -->
+<div class="band dr" style="margin-top:26px;">
+  <div class="tag">DR / BCDR</div>
+  <div class="node provider"><h3>🏢 Primary</h3>
+    <div class="lines"><code>FAILOVER GROUP</code><br>DATABASES, SHARES, <b>LISTINGS</b></div></div>
+  <div class="arrow"><div class="lbl">replicates (all-or-nothing)</div><div class="line"></div></div>
+  <div class="node dr"><h3>🛟 DR Region</h3>
+    <div class="lines">promote on outage:<br><code>ALTER FAILOVER GROUP … PRIMARY</code></div></div>
+  <div class="arrow"><div class="lbl">no remount</div><div class="line"></div></div>
+  <div class="node consumer"><h3>👥 Consumer</h3>
+    <div class="lines"><b>zero downtime</b><br>keeps querying</div></div>
+</div>
+<div class="footnote">Replicating databases does <b>not</b> protect your shares/listings — put them in the failover group too.</div>
+
+<div class="foot">
+  <span>github.com/roshanbagde/snowflake-data-engineering · snowflake/data-sharing</span>
+  <span class="brand">@roshanbagde</span>
+</div>
+</body>
+</html>

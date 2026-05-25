@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Snowflake Data Sharing — Cheat Sheet</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{width:1400px;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;
+       background:#0a1929;color:#e6edf3;padding:54px 54px 60px;}
+  header{display:flex;align-items:baseline;gap:16px;border-bottom:2px solid #1f4060;padding-bottom:20px;margin-bottom:28px;}
+  header h1{font-size:40px;font-weight:800;}
+  header h1 .c{color:#29b5e8;}
+  header .tag{margin-left:auto;color:#5b7186;font-size:17px;}
+  .grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;}
+  .card{background:#0c1d30;border:1px solid #1f3b57;border-radius:14px;padding:20px 22px;}
+  .card.span2{grid-column:span 2;}
+  .card.span3{grid-column:span 3;}
+  .card h2{font-size:20px;color:#29b5e8;margin-bottom:13px;display:flex;align-items:center;gap:8px;}
+  code,pre{font-family:'SF Mono',Menlo,Consolas,monospace;}
+  pre{background:#08111d;border:1px solid #15314e;border-radius:8px;padding:13px 15px;
+      font-size:13.5px;line-height:1.5;color:#cfe6ff;white-space:pre;overflow-x:auto;}
+  pre .k{color:#29b5e8;font-weight:700;} pre .s{color:#3ddc84;} pre .c2{color:#5b7186;}
+  ul{list-style:none;} li{font-size:15px;line-height:1.65;padding-left:20px;position:relative;}
+  li::before{content:'▸';color:#29b5e8;position:absolute;left:0;}
+  li.no::before{content:'⛔';left:0;} li.ok::before{content:'✅';left:0;}
+  table{width:100%;border-collapse:collapse;font-size:14.5px;}
+  th,td{text-align:left;padding:7px 8px;border-bottom:1px solid #15314e;vertical-align:top;}
+  th{color:#7aa7d6;font-size:12.5px;text-transform:uppercase;letter-spacing:.5px;}
+  td code{color:#9be7ff;background:#08111d;padding:2px 6px;border-radius:5px;}
+  td b{color:#fff;}
+  footer{margin-top:28px;color:#5b7186;font-size:15px;display:flex;justify-content:space-between;}
+  footer .brand{color:#29b5e8;font-weight:700;}
+</style>
+</head>
+<body>
+<header>
+  <h1>❄️ Snowflake <span class="c">Data Sharing</span> — Cheat Sheet</h1>
+  <span class="tag">verified vs docs · May 2026</span>
+</header>
+
+<div class="grid">
+
+  <div class="card span3">
+    <h2>🧭 Pick the right method</h2>
+    <table>
+      <tr><th>Consumer / need</th><th>Method</th><th>Why</th></tr>
+      <tr><td>Snowflake, <b>same region + cloud</b></td><td><code>Direct share</code></td><td>instant, no copy, free to set up</td></tr>
+      <tr><td>Snowflake, <b>different region/cloud</b></td><td><code>Listing + auto-fulfillment</code></td><td>Snowflake replicates to consumer region</td></tr>
+      <tr><td><b>Inside your org</b></td><td><code>Organization listing</code></td><td>cross-region within the org</td></tr>
+      <tr><td><b>No Snowflake account</b></td><td><code>Reader account</code></td><td>provider creates + pays for it</td></tr>
+      <tr><td><b>Public / discoverable</b> (free or paid)</td><td><code>Marketplace listing</code></td><td>any Snowflake customer can find it</td></tr>
+      <tr><td>Share must <b>survive a region outage</b></td><td><code>Failover group + LISTINGS</code></td><td>promote DR replica, no consumer remount</td></tr>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>🔑 Provider — direct share</h2>
+<pre><span class="k">CREATE SHARE</span> sales_share;
+<span class="k">GRANT USAGE</span>  <span class="k">ON DATABASE</span> sales_db
+  <span class="k">TO SHARE</span> sales_share;
+<span class="k">GRANT USAGE</span>  <span class="k">ON SCHEMA</span> sales_db.public
+  <span class="k">TO SHARE</span> sales_share;
+<span class="k">GRANT SELECT</span> <span class="k">ON VIEW</span> …orders_v
+  <span class="k">TO SHARE</span> sales_share;
+<span class="k">ALTER SHARE</span> sales_share
+  <span class="k">ADD ACCOUNTS</span> = org1.consumer1;</pre>
+  </div>
+
+  <div class="card">
+    <h2>📥 Consumer</h2>
+<pre><span class="k">CREATE DATABASE</span> shared_sales
+  <span class="k">FROM SHARE</span> org1.prov.sales_share;
+<span class="k">GRANT IMPORTED PRIVILEGES</span>
+  <span class="k">ON DATABASE</span> shared_sales
+  <span class="k">TO ROLE</span> analyst;
+<span class="k">SELECT</span> * <span class="k">FROM</span>
+  shared_sales.public.orders_v;</pre>
+    <ul style="margin-top:10px;">
+      <li>Read-only, 1 DB / share</li>
+      <li>No onward re-sharing</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>🎯 Per-consumer rows</h2>
+<pre><span class="k">CREATE SECURE VIEW</span> v <span class="k">AS</span>
+<span class="k">SELECT</span> o.* <span class="k">FROM</span> orders o
+<span class="k">JOIN</span> entitlements e
+  <span class="k">ON</span> o.region = e.region
+ <span class="k">AND</span> e.acct =
+   <span class="k">CURRENT_ACCOUNT</span>();</pre>
+    <ul style="margin-top:10px;">
+      <li><code>CURRENT_ACCOUNT()</code> = the <b>consumer</b></li>
+      <li>Always share <b>SECURE</b> views</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>🌍 Auto-fulfillment</h2>
+    <ul>
+      <li>Cross-region/cloud via a <b>listing</b></li>
+      <li>Replicates to a managed <b>SSA</b> per region, <b>on demand</b></li>
+      <li class="no">Not on trial accounts</li>
+      <li class="no">No secure views over <i>other</i> DBs</li>
+      <li>Cost = storage + compute + transfer</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>🔁 Replication vs Failover</h2>
+    <table>
+      <tr><th></th><th>Repl.</th><th>Failover</th></tr>
+      <tr><td>Target</td><td>read-only</td><td><b>promotable</b></td></tr>
+      <tr><td>Use</td><td>distribute</td><td><b>DR</b></td></tr>
+      <tr><td>Edition</td><td>all*</td><td>BC+</td></tr>
+    </table>
+    <ul style="margin-top:10px;">
+      <li>*DB + share repl = all editions</li>
+      <li class="no">Inbound shares don't replicate</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h2>🛟 DR for sharing</h2>
+<pre><span class="k">CREATE FAILOVER GROUP</span> fg
+ <span class="k">OBJECT_TYPES</span>=DATABASES,
+   SHARES,<span class="s">LISTINGS</span>
+ <span class="k">ALLOWED_DATABASES</span>=db
+ <span class="k">ALLOWED_SHARES</span>=sh
+ <span class="k">ALLOWED_ACCOUNTS</span>=org.dr;</pre>
+    <ul style="margin-top:10px;">
+      <li>DB DR ≠ share/listing DR</li>
+      <li>All refs in <b>one</b> group (all-or-nothing)</li>
+      <li class="ok">Failover → consumers keep access</li>
+    </ul>
+  </div>
+
+  <div class="card span3">
+    <h2>⚠️ Top limitations</h2>
+    <table>
+      <tr>
+        <td>• Direct share = <b>same region + cloud</b> only<br>• Shared objects <b>read-only</b>; 1 DB per share<br>• No transitive re-sharing</td>
+        <td>• Auto-fulfillment not on trials; no cross-DB secure views<br>• Cloud-marketplace accounts fulfill within that cloud only<br>• Refresh frequency drives auto-fulfill cost</td>
+        <td>• Failover/promotion needs <b>Business Critical+</b><br>• Inbound shares can't be replicated<br>• BCDR excludes draft / stage-backed / paid / Native App listings</td>
+      </tr>
+    </table>
+  </div>
+
+</div>
+
+<footer>
+  <span>github.com/roshanbagde/snowflake-data-engineering · snowflake/data-sharing</span>
+  <span class="brand">@roshanbagde</span>
+</footer>
+</body>
+</html>

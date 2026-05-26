@@ -1,0 +1,135 @@
+# 12. A–Z Quick Glossary
+
+Every term in one place, one line each, for fast lookup. (See the topic files for full analogies and
+examples.)
+
+---
+
+- **Alpha** — extra return beyond the market, i.e. a manager's skill as a number.
+- **Appreciation** — a currency or asset getting stronger/more valuable.
+- **Ask (Offer)** — lowest price a seller will accept right now.
+- **Asset Class** — a category of similar investments (stocks, bonds, commodities…).
+- **Back Office** — operations team that settles trades, keeps records, and produces reports.
+- **Back Office Reporting** — regular reports on positions, P&L, cash, recon, FX, and regulation.
+- **Base Currency** — the home currency a fund reports everything in.
+- **Bear Market** — prices broadly falling; pessimism. 🐻
+- **Beta** — how much a stock moves relative to the overall market.
+- **Bid** — highest price a buyer will pay right now.
+- **Bond** — a loan to a company/government that pays you interest. (a.k.a. fixed income)
+- **Books and Records** — the official legal record of all trades, positions, and cash.
+- **Break** — a mismatch found during reconciliation that must be fixed.
+- **Break-even** — the price where you neither gain nor lose.
+- **Broker** — middleman that places your orders on the exchange.
+- **Bull Market** — prices broadly rising; optimism. 🐂
+- **Buyback** — a company repurchasing its own shares.
+- **Call Option** — the right to *buy* at a fixed price; a bet that price rises.
+- **Clearing** — working out who owes what before settlement.
+- **Clearing House** — neutral body guaranteeing trades complete.
+- **Commission / Fees** — what the broker charges to trade.
+- **Commodity** — physical goods traded (gold, oil, wheat…).
+- **Corporate Action** — a company event affecting shares (dividend, split, merger…).
+- **Cost Basis** — the average price you paid; your profit reference point.
+- **Coupon** — a bond's regular interest payment.
+- **Counterparty** — the other side of your trade.
+- **Credit/Default Risk** — risk a borrower won't pay you back.
+- **Currency** — a country's money (USD, EUR, INR…).
+- **Currency Pair** — FX quote of one currency vs another (e.g., EUR/USD).
+- **Custodian** — institution that safely holds assets and ownership records.
+- **Dealer / Market Maker** — always quotes buy & sell prices, providing liquidity, earns the spread.
+- **Depreciation** — a currency/asset getting weaker/less valuable.
+- **Derivative** — a contract whose value comes from another asset (options, futures…).
+- **Diversification** — spreading money across many investments to reduce risk.
+- **Dividend** — a share of company profit paid to shareholders.
+- **Dividend Yield** — dividend as a % of share price.
+- **Drawdown** — the drop from a peak value to a low.
+- **Equity** — ownership in a company; another word for stock/shares.
+- **ETF** — a basket of investments that trades like a single stock.
+- **Ex-Dividend Date** — own the stock before this date to get the dividend.
+- **Exchange** — an organized venue where trades happen (NYSE, NASDAQ, NSE…).
+- **Exchange Rate** — how much one currency is worth in another.
+- **Execution / Fill** — when your order actually trades.
+- **Exercise** — using an option's right to buy/sell.
+- **Expiry** — an option's deadline.
+- **Exposure** — how much you stand to gain/lose from a price move.
+- **Flat** — having no position.
+- **Forward** — a private custom agreement to trade at a future date/price.
+- **Front Office** — traders/salespeople who make money directly.
+- **Futures** — an *obligation* to buy/sell at a set price on a set date.
+- **FX (Foreign Exchange)** — trading currencies against each other.
+- **FX Risk** — risk from exchange-rate changes.
+- **Gross** — before costs/fees/taxes.
+- **Hedge / Hedging** — a protective move that limits losses if your main bet goes wrong.
+- **Hedge Fund** — private, lightly-regulated fund using aggressive strategies (shorting, leverage) for the wealthy.
+- **Holding** — an instrument you currently own.
+- **In the Money (ITM)** — an option that would profit if used now.
+- **Index** — one number tracking a group of stocks (S&P 500, Nifty 50…).
+- **Institutional Investor** — a big organization investing large sums.
+- **Instrument** — any tradable financial thing (stock, bond, option…).
+- **IPO** — a company's first public sale of shares.
+- **Leverage** — using borrowed money to size up a position; multiplies gains and losses.
+- **Limit Order** — buy/sell only at a specified price or better.
+- **Liquidity** — how easily you can trade without moving the price.
+- **Liquidity Risk** — risk you can't sell quickly at a fair price.
+- **Long** — you own it; profit if price rises.
+- **Margin** — collateral/deposit required when trading with leverage.
+- **Margin Call** — broker demands more cash when a leveraged position drops.
+- **Market Cap** — company value = share price × number of shares.
+- **Market Order** — buy/sell now at the current price.
+- **Market Risk** — risk the whole market falls.
+- **Mark-to-Market (MTM)** — revaluing positions at the current market price.
+- **Merger & Acquisition** — companies combining (merger) or one buying another (acquisition).
+- **Middle Office** — risk and control layer that checks trades and measures risk.
+- **Mutual Fund** — a regulated, publicly-available pooled investment fund.
+- **NAV (Net Asset Value)** — a fund's total value per unit/share.
+- **Net** — after all costs; what you actually keep.
+- **Notional** — total cash value of a position = price × quantity.
+- **OHLC** — Open, High, Low, Close prices for a period.
+- **Option** — the *right* (not obligation) to buy/sell at a set price by a date.
+- **Order** — an instruction to buy or sell.
+- **Out of the Money (OTM)** — an option that would lose if used now.
+- **P&L (PnL)** — Profit and Loss; money made or lost.
+- **Pip** — smallest standard move in an FX rate.
+- **Portfolio** — your full collection of investments.
+- **Position** — what you currently own or owe in an instrument.
+- **Premium** — the price paid to buy an option.
+- **Price** — what one unit costs right now.
+- **Prime Broker** — special broker serving hedge funds (lends cash & shares).
+- **Private Equity** — funds that buy whole companies, improve, and resell.
+- **Put Option** — the right to *sell* at a fixed price; protection or a bet that price falls.
+- **Quantity (Qty)** — how many units in a trade/position.
+- **Quote** — current price info (often bid & ask).
+- **Realized P&L** — profit/loss locked in by actually selling.
+- **Reconciliation** — comparing two record sets to catch mismatches.
+- **Regulator** — government body policing fair markets (SEC, SEBI, FCA…).
+- **Retail Investor** — an everyday individual investor.
+- **Return** — profit as a % of amount invested.
+- **Reverse Split** — combining shares into fewer, higher-priced ones.
+- **Rights Issue** — existing holders get first chance to buy new shares, often discounted.
+- **Risk** — the chance of losing money or uncertain returns.
+- **ROI** — Return on Investment, profit as a %.
+- **Security** — umbrella word for a tradable instrument (esp. stocks/bonds).
+- **Settlement** — when cash and securities actually change hands (T+1/T+2).
+- **Share / Stock** — one unit of ownership in a company.
+- **Shareholder** — an owner of shares.
+- **Sharpe Ratio** — return earned per unit of risk; higher is better.
+- **Short** — borrow & sell something you don't own; profit if price falls.
+- **Spin-off** — a company splitting part of itself into a new company.
+- **Spot** — the rate/price for trading right now.
+- **Spread** — the gap between bid and ask.
+- **Stock Split** — dividing each share into more, lower-priced shares.
+- **Strike Price** — the fixed price in an option contract.
+- **Swap** — a contract to exchange cash flows (e.g., fixed for floating rates).
+- **T+1 / T+2** — settlement 1 or 2 business days after the trade date.
+- **Tick** — the smallest possible price move.
+- **Ticker / Symbol** — a stock's short code (AAPL, MSFT…).
+- **Trade** — a single buy or sell.
+- **Underlying** — the asset a derivative is based on.
+- **Unrealized P&L** — paper profit/loss while you still hold the position.
+- **VaR (Value at Risk)** — estimate of the most you'd likely lose over a period.
+- **Volatility** — how much/fast a price swings; a proxy for risk.
+- **Volume** — how many units traded in a period.
+- **Yield** — income (interest/dividend) as a % of price.
+
+---
+
+⬅️ Back to the [README index](README.md)

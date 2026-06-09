@@ -55,6 +55,8 @@ No Snowflake password is ever used.
 
 ## ⚡ Quick reference — the Snowflake side
 
+> 📄 All commands (SSO integration, user creation, cert rotation, SCIM, token rotation) are in **[`snowflake_sso_scim_setup.sql`](./snowflake_sso_scim_setup.sql)** — placeholders only, nothing real to redact. Run as `ACCOUNTADMIN`.
+
 ```sql
 USE ROLE ACCOUNTADMIN;
 

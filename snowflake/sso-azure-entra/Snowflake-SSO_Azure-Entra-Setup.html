@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Entra ID ↔ Snowflake SSO Setup Guide</title>
+<style>
+  :root {
+    --blue: #0a5ad6;
+    --blue-dark: #073e91;
+    --bg: #f6f8fb;
+    --card: #ffffff;
+    --text: #1f2933;
+    --muted: #5a6b7b;
+    --border: #e1e7ef;
+    --code-bg: #1e2733;
+    --code-text: #e6edf3;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+    font-size: 16px;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; display: flex; gap: 28px; }
+  /* Sidebar TOC */
+  nav.toc {
+    position: sticky; top: 0; align-self: flex-start;
+    width: 270px; flex-shrink: 0;
+    max-height: 100vh; overflow-y: auto;
+    padding: 24px 12px 24px 0;
+    font-size: 13.5px;
+  }
+  nav.toc h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 10px; }
+  nav.toc a { display: block; color: var(--muted); text-decoration: none; padding: 3px 10px; border-left: 2px solid transparent; border-radius: 0 4px 4px 0; }
+  nav.toc a:hover { color: var(--blue); background: #eef3fb; border-left-color: var(--blue); }
+  nav.toc a.sub { padding-left: 24px; font-size: 12.5px; }
+  /* Main */
+  main { flex: 1; min-width: 0; padding: 28px 0 80px; }
+  header.hero {
+    background: linear-gradient(135deg, var(--blue), var(--blue-dark));
+    color: #fff; border-radius: 14px; padding: 34px 32px; margin-bottom: 28px;
+    box-shadow: 0 8px 24px rgba(10,90,214,.18);
+  }
+  header.hero h1 { margin: 0 0 8px; font-size: 27px; line-height: 1.25; }
+  header.hero p { margin: 0; opacity: .95; font-size: 15.5px; }
+  .badges { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .badge { background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.35); padding: 4px 11px; border-radius: 20px; font-size: 12.5px; }
+  section.card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 6px 30px 24px; margin-bottom: 22px; box-shadow: 0 1px 3px rgba(20,40,80,.04);
+  }
+  h2 { font-size: 22px; margin: 26px 0 12px; padding-bottom: 8px; border-bottom: 2px solid var(--border); color: var(--blue-dark); }
+  h3 { font-size: 17.5px; margin: 22px 0 8px; color: var(--text); }
+  h4 { font-size: 15px; margin: 16px 0 6px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+  p { margin: 10px 0; }
+  a { color: var(--blue); }
+  ul, ol { margin: 10px 0; padding-left: 24px; }
+  li { margin: 5px 0; }
+  strong { color: var(--text); }
+  em { color: #3a4a5a; }
+  /* Inline code */
+  code {
+    font-family: "SF Mono", "Fira Code", Consolas, Menlo, monospace;
+    background: #eef1f6; color: #b5295a; padding: 1.5px 6px; border-radius: 5px; font-size: 13.5px;
+  }
+  /* Code blocks */
+  pre {
+    background: var(--code-bg); color: var(--code-text); padding: 16px 18px; border-radius: 10px;
+    overflow-x: auto; font-size: 13.5px; line-height: 1.55; margin: 14px 0;
+    border: 1px solid #2b3744;
+  }
+  pre code { background: none; color: inherit; padding: 0; font-size: 13.5px; }
+  pre .lang { display: block; color: #7d8da0; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14.5px; }
+  th, td { text-align: left; padding: 10px 12px; border: 1px solid var(--border); vertical-align: top; }
+  th { background: #eef3fb; color: var(--blue-dark); font-weight: 600; }
+  tr:nth-child(even) td { background: #fafbfd; }
+  /* Callouts */
+  .callout { border-radius: 10px; padding: 13px 16px 13px 16px; margin: 14px 0; border-left: 5px solid; font-size: 14.5px; }
+  .callout p { margin: 6px 0; }
+  .callout .ct { font-weight: 700; display: block; margin-bottom: 4px; }
+  .note    { background: #eef4ff; border-color: #4a82e8; }
+  .warn    { background: #fff6e9; border-color: #f0a020; }
+  .tip     { background: #ecfbf1; border-color: #28a86a; }
+  .danger  { background: #fdeeee; border-color: #e0524d; }
+  /* Handshake / flow block */
+  .flow { background: #0f1b2d; color: #d7e3f4; border-radius: 10px; padding: 18px 20px; font-family: "SF Mono", Consolas, monospace; font-size: 13.5px; line-height: 1.7; white-space: pre-wrap; margin: 14px 0; }
+  /* Checklist */
+  ul.check { list-style: none; padding-left: 4px; }
+  ul.check li { position: relative; padding-left: 30px; margin: 7px 0; }
+  ul.check li::before { content: "☐"; position: absolute; left: 0; top: -1px; font-size: 18px; color: var(--blue); }
+  /* Analogy callout */
+  .analogy { background: #f4f0ff; border-color: #8b5cf6; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 26px 0; }
+  .footer { text-align: center; color: var(--muted); font-size: 13px; margin-top: 30px; }
+  /* Responsive */
+  @media (max-width: 880px) {
+    .wrap { flex-direction: column; }
+    nav.toc { position: static; width: 100%; max-height: none; padding: 16px 0; border-bottom: 1px solid var(--border); }
+    section.card { padding: 6px 18px 18px; }
+  }
+  /* ===== Visual diagrams (added) ===== */
+  .viz { background: #f8fbff; border: 1px solid #dce6f2; border-radius: 12px; padding: 20px; margin: 18px 0; }
+  .viz-title { font-size: 12px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 700; text-align: center; margin-bottom: 14px; }
+  .viz-row { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 10px; }
+  .viz-col { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .viz-node { background: #fff; border: 2px solid var(--blue); border-radius: 10px; padding: 11px 15px; font-size: 13px; font-weight: 600; color: var(--blue-dark); text-align: center; min-width: 110px; box-shadow: 0 2px 6px rgba(20,40,80,.07); }
+  .viz-node small { display: block; font-weight: 400; color: var(--muted); font-size: 11.5px; margin-top: 3px; line-height: 1.4; }
+  .viz-node.alt  { border-color: #8b5cf6; color: #6b32c9; }
+  .viz-node.ok   { border-color: #28a86a; color: #137a4b; }
+  .viz-node.warn { border-color: #f0a020; color: #a4660a; }
+  .viz-node.ice  { border-color: #1ca7c4; color: #13718a; }
+  .viz-arrow { font-size: 18px; color: var(--blue); font-weight: 700; line-height: 1; }
+  .viz-step-lbl { font-size: 11px; color: var(--muted); }
+  .viz-cap { text-align: center; font-size: 12.5px; color: var(--muted); font-style: italic; margin-top: 12px; }
+  /* swimlane sequence */
+  .viz-seq .lane { display: grid; grid-template-columns: 120px 1fr; align-items: center; gap: 10px; border-top: 1px dashed #d4e0ee; padding: 9px 0; }
+  .viz-seq .lane:first-child { border-top: none; }
+  .viz-seq .who { font-weight: 700; font-size: 12.5px; color: var(--blue-dark); }
+  .viz-seq .act { font-size: 13px; }
+  .viz-seq .num { display: inline-block; width: 20px; height: 20px; line-height: 20px; text-align: center; background: var(--blue); color: #fff; border-radius: 50%; font-size: 11px; font-weight: 700; margin-right: 8px; }
+  /* stacked layers */
+  .viz-stack { display: flex; flex-direction: column; align-items: center; }
+  .viz-stack .layer { width: 100%; max-width: 580px; border: 2px solid var(--blue); border-radius: 9px; padding: 9px 14px; margin: 4px 0; text-align: center; font-size: 12.5px; font-weight: 600; background: #fff; }
+  .viz-stack .down { color: var(--blue); font-size: 16px; line-height: 1; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <nav class="toc">
+    <h2>On this page</h2>
+    <a href="#intro">Why create an Azure app?</a>
+    <a href="#problem" class="sub">The problem we solve</a>
+    <a href="#players" class="sub">The two players</a>
+    <a href="#whatapp" class="sub">What the Azure app is</a>
+    <a href="#handshake" class="sub">The login handshake</a>
+    <a href="#glossary" class="sub">Glossary</a>
+    <a href="#certs">Certificates &amp; secrets</a>
+    <a href="#cert-what" class="sub">What is the certificate</a>
+    <a href="#cert-example" class="sub">What it looks like</a>
+    <a href="#cert-verified" class="sub">Where the user is verified</a>
+    <a href="#cert-expire" class="sub">Why they expire</a>
+    <a href="#cert-impact" class="sub">Impact if it expires</a>
+    <a href="#cert-changes" class="sub">What changes on renewal</a>
+    <a href="#cert-renew" class="sub">How to renew safely</a>
+    <a href="#step0">0. Before you start</a>
+    <a href="#step1">1. Snowflake identifiers</a>
+    <a href="#step2">2. Create the Azure app</a>
+    <a href="#step3">3. Configure SAML SSO</a>
+    <a href="#step4">4. Configure Snowflake</a>
+    <a href="#step5">5. Create Entra test user</a>
+    <a href="#step6">6. Assign user to app</a>
+    <a href="#step7">7. Matching Snowflake user</a>
+    <a href="#step8">8. Test the connection</a>
+    <a href="#step9">9. Backup admin login</a>
+    <a href="#trouble">Troubleshooting</a>
+    <a href="#appA">Appendix A — Value reference</a>
+    <a href="#appB">Appendix B — SCIM provisioning</a>
+    <a href="#scim-what" class="sub">What SCIM is / why use it</a>
+    <a href="#scim-how" class="sub">SSO vs. SCIM</a>
+    <a href="#scim-snowflake" class="sub">Snowflake side setup</a>
+    <a href="#scim-azure" class="sub">Azure side setup</a>
+    <a href="#scim-scope" class="sub">Scope (who syncs)</a>
+    <a href="#scim-mapping" class="sub">Attribute mappings</a>
+    <a href="#scim-groups" class="sub">Groups → roles</a>
+    <a href="#scim-deprovision" class="sub">Deprovisioning</a>
+    <a href="#scim-token" class="sub">Rotating the token</a>
+    <a href="#scim-trouble" class="sub">SCIM troubleshooting</a>
+    <a href="#summary">Summary checklist</a>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <h1>Single Sign-On between Microsoft Entra ID (Azure AD) &amp; Snowflake</h1>
+      <p>A beginner-friendly, step-by-step guide to setting up SAML 2.0 SSO so users log into Snowflake with their Microsoft/Azure credentials.</p>
+      <div class="badges">
+        <span class="badge">IdP: Microsoft Entra ID</span>
+        <span class="badge">SP: Snowflake</span>
+        <span class="badge">Protocol: SAML 2.0</span>
+        <span class="badge">Works on free / trial accounts</span>
+      </div>
+    </header>
+
+    <!-- ============ INTRO ============ -->
+    <section class="card" id="intro">
+      <h2>What is this and why are we creating an Azure app? <span style="font-weight:400;font-size:15px;color:var(--muted)">(read this first)</span></h2>
+      <p>If this is your first time, this section gives you the full picture in plain language. Once it clicks, every step below will make sense.</p>
+
+      <h3 id="problem">The everyday problem we're solving</h3>
+      <p>Normally, to log into Snowflake you create a <strong>separate username and password</strong> just for Snowflake. If your company uses 20 tools, that's 20 different passwords to remember, reset, and keep secure. When someone leaves the company, an admin has to remember to disable their account in all 20 places.</p>
+      <p><strong>Single Sign-On (SSO)</strong> fixes this. Instead of Snowflake checking your password itself, it says: <em>"I trust Microsoft. If Microsoft says you are who you claim to be, I'll let you in."</em> So you log in <strong>once</strong> with your Microsoft/Azure account, and you get into Snowflake (and other apps) without typing a separate password.</p>
+
+      <h3 id="players">The two players (a simple analogy)</h3>
+      <div class="callout analogy">
+        <span class="ct">🛂 Think of it like getting into an event using your passport</span>
+        <p><strong>Identity Provider (IdP)</strong> = <strong>Microsoft Entra ID (Azure)</strong> → the <strong>passport office</strong>. It already knows you and can vouch for your identity.</p>
+        <p><strong>Service Provider (SP)</strong> = <strong>Snowflake</strong> → the <strong>event venue</strong>. It doesn't issue IDs; it just checks the passport at the door.</p>
+      </div>
+      <div class="viz">
+        <div class="viz-title">The two players</div>
+        <div class="viz-row">
+          <div class="viz-node alt">🛂 Microsoft Entra ID<small>Identity Provider (IdP)<br>"the passport office"</small></div>
+          <div class="viz-arrow">⇄ &nbsp;trust&nbsp; ⇄</div>
+          <div class="viz-node ice">❄️ Snowflake<small>Service Provider (SP)<br>"the event venue"</small></div>
+        </div>
+        <div class="viz-cap">Snowflake trusts Entra ID to vouch for users — it never sees their password.</div>
+      </div>
+      <p>Snowflake (the venue) doesn't want to manage everyone's identity. It would rather trust a party that already does that well — Microsoft (the passport office).</p>
+
+      <h3 id="whatapp">So what <em>is</em> the "Azure app" we create?</h3>
+      <p>When you create the <strong>Snowflake app in Azure</strong> (called an <em>Enterprise Application</em>), you are <strong>not</strong> installing Snowflake software into Azure. You are creating a <strong>connection / agreement</strong> between Microsoft and Snowflake. That app is the place where you tell Microsoft:</p>
+      <div class="callout note">
+        <p><em>"Hey Microsoft, there's an external service called Snowflake. Here's its address. When my users want to go there, here's how you should prove their identity to it, and here's which of my users are even allowed to use it."</em></p>
+      </div>
+      <p>In other words, the Azure app is the <strong>"trust bridge"</strong> that holds the configuration for the handshake between Microsoft and Snowflake. Without it, Microsoft has no idea Snowflake exists and wouldn't know how to vouch for your users.</p>
+
+      <h3 id="handshake">What actually happens when a user logs in (the handshake)</h3>
+      <div class="flow">1. User clicks "Azure SSO" on the Snowflake login page.
+2. Snowflake says: "I don't know your password — go ask Microsoft to prove who you are."
+        ↓  (redirect)
+3. Microsoft (Entra ID) checks the user (password, MFA, etc.).
+4. Microsoft creates a signed digital note: "Yes, this is jane.doe@company.com. I vouch for her."
+   This signed note is called a SAML assertion.
+        ↓  (redirect back, carrying the signed note)
+5. Snowflake reads the note, checks Microsoft's signature is genuine, finds the matching
+   Snowflake user, and logs Jane in. No Snowflake password needed.</div>
+      <div class="viz">
+        <div class="viz-title">The login handshake, step by step</div>
+        <div class="viz-seq">
+          <div class="lane"><span class="who">👤 User</span><span class="act"><span class="num">1</span>Clicks <strong>"Azure SSO"</strong> on the Snowflake login page</span></div>
+          <div class="lane"><span class="who">❄️ Snowflake</span><span class="act"><span class="num">2</span>"I don't know your password — go prove who you are to Microsoft" &nbsp;→ redirects</span></div>
+          <div class="lane"><span class="who">🛂 Entra ID</span><span class="act"><span class="num">3</span>Checks the user (password + MFA)</span></div>
+          <div class="lane"><span class="who">🛂 Entra ID</span><span class="act"><span class="num">4</span>Creates a <strong>signed note (SAML assertion)</strong>: "Yes, this is jane.doe@…" &nbsp;→ redirects back</span></div>
+          <div class="lane"><span class="who">❄️ Snowflake</span><span class="act"><span class="num">5</span>Verifies the signature with the <strong>certificate</strong>, finds the matching user, logs Jane in ✅</span></div>
+        </div>
+        <div class="viz-cap">No Snowflake password is ever used. The certificate proves step 4 really came from <em>your</em> Microsoft tenant.</div>
+      </div>
+      <p>The <strong>signature</strong> in step 4 is why we exchange a <strong>certificate</strong> later (so Snowflake can verify the note really came from <em>your</em> Microsoft tenant and wasn't forged). The <strong>email/name</strong> in the note is the <strong>NameID</strong> — that's how Snowflake knows <em>which</em> Snowflake account to open, which is why the user's identity must match on both sides.</p>
+
+      <h3>Why two configurations (Azure side AND Snowflake side)?</h3>
+      <p>Trust has to go <strong>both ways</strong>, like exchanging phone numbers:</p>
+      <ul>
+        <li>In <strong>Azure</strong>, you tell Microsoft <em>who Snowflake is</em> (its URLs) and <em>who is allowed in</em> (Steps 2–5).</li>
+        <li>In <strong>Snowflake</strong>, you tell Snowflake <em>to trust this specific Microsoft tenant</em> by giving it Microsoft's address and certificate (Step 4).</li>
+      </ul>
+      <p>That's the whole idea. Everything below is just filling in those details correctly.</p>
+
+      <h3 id="glossary">Plain-language glossary</h3>
+      <table>
+        <tr><th>Term</th><th>What it really means</th></tr>
+        <tr><td><strong>SSO</strong></td><td>Log in once, get into many apps without re-entering passwords.</td></tr>
+        <tr><td><strong>Entra ID / Azure AD</strong></td><td>Microsoft's identity service — the "passport office."</td></tr>
+        <tr><td><strong>Enterprise Application</strong> (the "Azure app")</td><td>The connection/config object in Azure that links Microsoft to an external app (Snowflake). The trust bridge.</td></tr>
+        <tr><td><strong>SAML 2.0</strong></td><td>The standard "language"/protocol Microsoft and Snowflake use to pass the signed identity note.</td></tr>
+        <tr><td><strong>IdP (Identity Provider)</strong></td><td>The system that proves identity → <strong>Azure</strong>.</td></tr>
+        <tr><td><strong>SP (Service Provider)</strong></td><td>The app you're logging into → <strong>Snowflake</strong>.</td></tr>
+        <tr><td><strong>SAML assertion</strong></td><td>The signed digital note saying "this user is genuine."</td></tr>
+        <tr><td><strong>NameID</strong></td><td>The piece of the note (usually email) that says <em>which</em> user it is.</td></tr>
+        <tr><td><strong>Certificate</strong></td><td>The digital signature key Snowflake uses to confirm the note really came from your Microsoft.</td></tr>
+        <tr><td><strong>ACS / Reply URL</strong></td><td>The exact Snowflake address where Microsoft sends the signed note (<code>.../fed/login</code>).</td></tr>
+      </table>
+
+      <div class="callout tip">
+        <span class="ct">Bottom line</span>
+        <p>You create the Azure app so Microsoft can act as the trusted "passport office" for Snowflake. It stores the settings that let Microsoft prove your users' identities to Snowflake, so people sign in with their existing Microsoft login instead of a separate Snowflake password.</p>
+      </div>
+    </section>
+
+    <!-- ============ CERTIFICATES ============ -->
+    <section class="card" id="certs">
+      <h2>Understanding certificates &amp; secrets <span style="font-weight:400;font-size:15px;color:var(--muted)">(and why you get those yearly renewal emails)</span></h2>
+      <p>This explains, in plain language, <strong>what that certificate is</strong>, <strong>why your company gets an email to renew it every ~1 year</strong>, and <strong>what happens to logins if you ignore it.</strong></p>
+
+      <h3 id="cert-what">What is the certificate, really?</h3>
+      <p>Remember the handshake above: when a user logs in, Microsoft creates a <strong>signed note</strong> (the SAML assertion) that says <em>"yes, this is Jane."</em> The <strong>certificate</strong> is what makes that signature trustworthy.</p>
+      <div class="callout analogy">
+        <span class="ct">🕯️ Think of it like a wax seal on a letter</span>
+        <p>Microsoft "stamps" every identity note with its <strong>private key</strong> (a secret only Microsoft has).</p>
+        <p>Snowflake holds the matching <strong>public certificate</strong> (the stamp's <em>pattern</em>) and checks every incoming note: <em>"Does this seal match the pattern I was given? Yes → genuine. No → reject."</em></p>
+      </div>
+      <div class="viz">
+        <div class="viz-title">How the signature is trusted (matching key pair)</div>
+        <div class="viz-row">
+          <div class="viz-node alt">🔑 Microsoft<br>PRIVATE key<small>secret — signs every note</small></div>
+          <div class="viz-arrow">signs ➜</div>
+          <div class="viz-node">✉️ SAML assertion<small>"this is Jane" + 🔏 seal</small></div>
+          <div class="viz-arrow">➜ verifies</div>
+          <div class="viz-node ice">📜 Public CERTIFICATE<small>held by Snowflake<br>checks the seal</small></div>
+        </div>
+        <div class="viz-cap">Only Microsoft's private key can make a seal its public certificate accepts. Expired/replaced cert &nbsp;→ &nbsp;check fails &nbsp;→ &nbsp;login rejected. This is the cert you paste into <code>SAML2_X509_CERT</code>.</div>
+      </div>
+      <p>So the certificate is how Snowflake knows the note <strong>really came from your Microsoft tenant</strong> and wasn't forged by an attacker. This is the same certificate you copy in <strong>Step 3c</strong> and paste into Snowflake as <code>SAML2_X509_CERT</code> in <strong>Step 4</strong>.</p>
+
+      <h3 id="cert-example">What the certificate actually looks like</h3>
+      <p>A common point of confusion: <strong>the certificate itself does NOT contain the user's name.</strong> It is just Microsoft's "stamp." When you download it from Azure (section 3), you get a block of Base64 text like this (shortened here — a real one is longer):</p>
+      <pre><span class="lang">certificate (Base64 / PEM)</span><code>-----BEGIN CERTIFICATE-----
+MIIDpDCCAoygAwIBAgIGAY1q3k2XMA0GCSqGSIb3DQEBCwUAMIGSMQswCQYDVQQG
+EwJVUzETMBEGA1UECAwKV2FzaGluZ3RvbjEQMA4GA1UEBwwHUmVkbW9uZDEeMBwG
+A1UECgwVTWljcm9zb2Z0IENvcnBvcmF0aW9uMR0wGwYDVQQLDBRBenVyZSBBY3Rp
+dmUgRGlyZWN0b3J5MR0wGwYDVQQDDBRTVFMgU2lnbmluZyBDZXJ0aWZpY2F0ZQ==
+...(many more lines of Base64)...
+kQf2c8E0n5o7w3Yb1xqkH9vQpZr6tN4mLd8sJ2aXwQ1cVbR0eP3uT5yG6hK7iZ=
+-----END CERTIFICATE-----</code></pre>
+      <div class="callout tip"><p>💡 Remember: when you paste this into Snowflake's <code>SAML2_X509_CERT</code>, you <strong>remove</strong> the <code>-----BEGIN CERTIFICATE-----</code> and <code>-----END CERTIFICATE-----</code> lines and keep only the Base64 in between.</p></div>
+      <p>That Base64 is just an <em>encoded</em> form. If you "decode" it (e.g. open the <code>.cer</code> file on Windows, or run <code>openssl x509 -in cert.cer -text -noout</code>), the <strong>human-readable details</strong> look like this:</p>
+      <pre><span class="lang">decoded certificate details</span><code>Issuer:        CN = Microsoft Azure Federated SSO Certificate
+Subject:       CN = Microsoft Azure Federated SSO Certificate
+Valid from:    Jun  6 00:00:00 2026 GMT      &lt;-- start date
+Valid to:      Jun  6 00:00:00 2027 GMT      &lt;-- EXPIRY date (this is your "1 year")
+Serial number: 01:8d:6a:de:4d:97
+Signature:     sha256WithRSAEncryption
+SHA-1 Thumbprint: A1:B2:C3:D4:E5:F6:07:18:29:3A:4B:5C:6D:7E:8F:90:12:34:56:78</code></pre>
+      <p>Notice the <strong>"Valid to"</strong> date — that is the expiry that triggers your yearly renewal email. The <strong>Thumbprint</strong> is a short fingerprint of the certificate; Azure shows the same thumbprint in section 3 so you can confirm Azure and Snowflake are using the <em>same</em> certificate.</p>
+
+      <h3 id="cert-verified">Where the user is actually shown as "verified"</h3>
+      <p>The user's identity does <strong>not</strong> live in the certificate — it lives in the <strong>SAML assertion</strong>, the signed message Microsoft sends to Snowflake at login (step 4 of the handshake). Here is a trimmed, annotated example of what that message contains:</p>
+      <pre><span class="lang">SAML assertion (the signed login message)</span><code>&lt;saml:Assertion&gt;
+
+  &lt;!-- WHO vouched for the user: your Microsoft tenant (the IdP) --&gt;
+  &lt;saml:Issuer&gt;https://sts.windows.net/8a0e1f7c-1234-.../&lt;/saml:Issuer&gt;
+
+  &lt;!-- WHO the user is — this is the NameID Snowflake matches to LOGIN_NAME --&gt;
+  &lt;saml:Subject&gt;
+    &lt;saml:NameID Format="...emailAddress"&gt;jane.doe@yourtenant.onmicrosoft.com&lt;/saml:NameID&gt;
+  &lt;/saml:Subject&gt;
+
+  &lt;!-- WHEN it is valid (a few minutes) and WHO it is for (your Snowflake account) --&gt;
+  &lt;saml:Conditions NotBefore="2026-06-06T10:00:00Z" NotOnOrAfter="2026-06-06T10:05:00Z"&gt;
+    &lt;saml:AudienceRestriction&gt;
+      &lt;saml:Audience&gt;https://ab12345.snowflakecomputing.com&lt;/saml:Audience&gt;
+    &lt;/saml:AudienceRestriction&gt;
+  &lt;/saml:Conditions&gt;
+
+  &lt;!-- PROOF the user was actually authenticated (this is the "verified" part) --&gt;
+  &lt;saml:AuthnStatement AuthnInstant="2026-06-06T10:00:00Z"&gt;
+    &lt;saml:AuthnContext&gt;
+      &lt;saml:AuthnContextClassRef&gt;
+        urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport
+      &lt;/saml:AuthnContextClassRef&gt;
+    &lt;/saml:AuthnContext&gt;
+  &lt;/saml:AuthnStatement&gt;
+
+  &lt;!-- THE SEAL: this signature is created with Microsoft's private key and is
+       checked by Snowflake using the public CERTIFICATE shown above. --&gt;
+  &lt;ds:Signature&gt;
+    &lt;ds:SignedInfo&gt;...&lt;/ds:SignedInfo&gt;
+    &lt;ds:SignatureValue&gt;Qm9ndXNTaWduYXR1cmVWYWx1ZUZvckV4YW1wbGVPbmx5PT0=&lt;/ds:SignatureValue&gt;
+    &lt;ds:KeyInfo&gt;
+      &lt;ds:X509Data&gt;&lt;ds:X509Certificate&gt;MIIDpDCC...==&lt;/ds:X509Certificate&gt;&lt;/ds:X509Data&gt;
+    &lt;/ds:KeyInfo&gt;
+  &lt;/ds:Signature&gt;
+
+&lt;/saml:Assertion&gt;</code></pre>
+      <p>How to read it, in plain terms:</p>
+      <table>
+        <tr><th>Part of the message</th><th>What it tells Snowflake</th></tr>
+        <tr><td><code>&lt;Issuer&gt;</code></td><td><em>"This came from your Microsoft tenant."</em></td></tr>
+        <tr><td><code>&lt;NameID&gt;</code></td><td><em>"The user is <code>jane.doe@…</code>."</em> (must match Snowflake <code>LOGIN_NAME</code>)</td></tr>
+        <tr><td><code>&lt;Conditions&gt;</code></td><td><em>"Only valid for the next ~5 minutes, and only for this Snowflake account."</em></td></tr>
+        <tr><td><code>&lt;AuthnStatement&gt;</code></td><td><em>"Microsoft really did authenticate this person just now."</em> ← <strong>the "verified" proof</strong></td></tr>
+        <tr><td><code>&lt;Signature&gt;</code></td><td><em>"And here's the seal — verify it with the certificate to be sure none of this was tampered with."</em></td></tr>
+      </table>
+      <div class="callout note">
+        <p>So the flow is: <strong>the <code>AuthnStatement</code> says the user is verified, the <code>NameID</code> says who they are, and the <code>Signature</code> (checked against the certificate) proves the whole note is genuine and unaltered.</strong> If the certificate has expired, that last check fails — and Snowflake rejects the login even though Microsoft really did verify the user.</p>
+      </div>
+
+      <h3>Certificate vs. secret — what's the difference?</h3>
+      <p>People use the words interchangeably, but they're slightly different "keys":</p>
+      <table>
+        <tr><th></th><th>Certificate</th><th>Client secret</th></tr>
+        <tr><td><strong>What it is</strong></td><td>A signing key + matching public stamp, used to <strong>sign/verify</strong> identity notes</td><td>A password-like string used to <strong>prove an app's identity</strong></td></tr>
+        <tr><td><strong>Used by</strong></td><td><strong>SAML SSO</strong> (this guide)</td><td>App registrations, SCIM/API connections, OAuth</td></tr>
+        <tr><td><strong>Looks like</strong></td><td>A <code>.cer</code>/<code>.pem</code> file or a long Base64 block</td><td>A random string like <code>Xy7q~9...</code></td></tr>
+        <tr><td><strong>In this setup</strong></td><td>The <strong>SAML signing certificate</strong> from Step 3</td><td>The <strong>SCIM provisioning token</strong> in Appendix B is the same <em>idea</em></td></tr>
+      </table>
+      <p>For <strong>SSO</strong>, the thing that matters is the <strong>SAML signing certificate</strong>. If you also set up auto-provisioning (Appendix B) or other app integrations, those use <strong>secrets/tokens</strong> that expire too — same renewal story applies.</p>
+
+      <h3 id="cert-expire">Why do they expire at all? Why not make them last forever?</h3>
+      <p>Expiry is a <strong>security feature, not an inconvenience</strong>. Here's the simple reasoning:</p>
+      <ol>
+        <li><strong>Limit the damage if a key leaks.</strong> If a signing key is ever stolen, an attacker could forge identity notes and impersonate your users. An expiry date means a stolen key is only useful for a limited time, not forever.</li>
+        <li><strong>Force regular "key changes."</strong> Just like you change important passwords periodically, rotating certificates regularly is good hygiene.</li>
+        <li><strong>Industry/compliance rules.</strong> Standards (and many company security policies) require keys to have a maximum lifetime — commonly <strong>1 year</strong> — which is exactly why you get that annual email.</li>
+      </ol>
+      <p>So the yearly renewal email is your company's system reminding you: <em>"this key is about to reach its expiry date — replace it before it stops working."</em></p>
+
+      <h3 id="cert-impact">What happens to authentication if the certificate EXPIRES?</h3>
+      <div class="callout danger">
+        <span class="ct">⚠️ This is the important part</span>
+        <p>If the certificate expires and you didn't renew it, <strong>SSO logins break for everyone</strong>.</p>
+      </div>
+      <p>Here's why, using the handshake:</p>
+      <ul>
+        <li>Microsoft keeps signing identity notes with its key.</li>
+        <li>But the certificate (stamp pattern) Snowflake holds is now <strong>expired/invalid</strong>.</li>
+        <li>Snowflake checks the seal, sees it's no longer valid, and <strong>rejects the login</strong>.</li>
+        <li>Users see errors like <em>"invalid SAML response"</em> or <em>"signature validation failed"</em> and <strong>cannot log in via SSO.</strong></li>
+      </ul>
+      <p>In short: <strong>expired certificate → the trust breaks → nobody can sign in through Azure SSO.</strong> This is why the renewal is treated as important — missing it can cause an outage where your whole team is locked out of Snowflake until it's fixed.</p>
+      <div class="callout tip">
+        <span class="ct">🛟 Safety net</span>
+        <p>This is exactly why <strong>Step 8</strong> tells you to keep a <strong>password-based ACCOUNTADMIN backup</strong> login. If a certificate expires unexpectedly, that backup account lets an admin get in and fix the certificate without being locked out.</p>
+      </div>
+
+      <h3 id="cert-changes">What exactly changes inside the certificate when it's renewed?</h3>
+      <p>When Microsoft (or any IdP) renews the certificate, it does <strong>not</strong> just "extend the date" on the old one — it generates a <strong>brand-new certificate from scratch</strong>. A certificate is really a <strong>public key plus some details, bundled together and self-signed by Microsoft</strong>. Renewal makes a fresh bundle. Here's what's different and what stays the same:</p>
+      <table>
+        <tr><th>Inside the certificate</th><th>Old cert</th><th>New cert</th><th>Changed?</th></tr>
+        <tr><td><strong>Key pair</strong> (the public key + its secret private-key partner)</td><td>key <strong>A</strong></td><td>key <strong>B</strong> (freshly generated)</td><td>✅ <strong>Yes — the big one</strong></td></tr>
+        <tr><td><strong>Valid from / Valid to</strong> dates</td><td>this year</td><td>next year</td><td>✅ Yes</td></tr>
+        <tr><td><strong>Serial number</strong></td><td>one value</td><td>a new value</td><td>✅ Yes</td></tr>
+        <tr><td><strong>Thumbprint</strong> (fingerprint / hash of the whole cert)</td><td>hash A</td><td>hash B</td><td>✅ Yes (everything above changed)</td></tr>
+        <tr><td><strong>Signature value</strong></td><td>…</td><td>…</td><td>✅ Yes</td></tr>
+        <tr><td><strong>Subject / Issuer name</strong> (e.g. <code>CN = Microsoft Azure Federated SSO Certificate</code>)</td><td>that text</td><td>the <strong>same</strong> text</td><td>❌ Usually identical</td></tr>
+      </table>
+      <p><strong>The key insight: the most important change is the key pair.</strong> Microsoft generates a <strong>new private key</strong> (kept secret on Microsoft's side) and its matching <strong>new public certificate</strong> (the one you hand to Snowflake). From the moment the new cert goes active, Microsoft signs every login note (the SAML assertion) with the <strong>new private key</strong>.</p>
+      <div class="callout danger">
+        <span class="ct">Why that breaks logins if you don't update Snowflake</span>
+        <p>Snowflake is still holding the <strong>old public certificate</strong>, but new assertions are now signed with the <strong>new private key</strong>. The old public cert <strong>mathematically cannot verify</strong> a signature made by the new key → you get <em>"signature validation failed."</em> That is the entire reason the renewal steps below make you paste the new cert into <code>SAML2_X509_CERT</code>.</p>
+      </div>
+      <div class="callout note">
+        <span class="ct">🔎 Why two certs can look identical</span>
+        <p>Because the <strong>Subject/Issuer name</strong> text is usually the same on both, the old and new certs look alike at a glance. The reliable way to tell them apart is the <strong>Thumbprint</strong> and the <strong>Valid to</strong> date — those are unique to each certificate. Azure shows the thumbprint so you can confirm exactly which one is active.</p>
+      </div>
+      <div class="callout tip">
+        <span class="ct">✅ What Microsoft does NOT change</span>
+        <p>It's still the same tenant, same <strong>Issuer</strong> URL (<code>SAML2_ISSUER</code>), same <strong>Login/SSO URL</strong> (<code>SAML2_SSO_URL</code>), and the same users. Only the signing key/certificate is swapped. So in Snowflake you normally only need to update <strong><code>SAML2_X509_CERT</code></strong> — not the issuer or SSO URL.</p>
+      </div>
+
+      <h3 id="cert-renew">How to renew/rotate the certificate (the safe way, no downtime)</h3>
+      <p>The trick is to add the <strong>new</strong> certificate <strong>before</strong> the old one expires, so there's an overlap where Snowflake accepts both. Then remove the old one.</p>
+      <div class="viz">
+        <div class="viz-title">Zero-downtime certificate rotation (overlap)</div>
+        <div class="viz-row">
+          <div class="viz-node ok">①&nbsp;Add NEW cert in Azure<small>(leave inactive)</small></div>
+          <div class="viz-arrow">➜</div>
+          <div class="viz-node ok">②&nbsp;Put NEW cert in Snowflake<small>SAML2_X509_CERT</small></div>
+          <div class="viz-arrow">➜</div>
+          <div class="viz-node warn">③&nbsp;Activate NEW in Azure<small>both valid briefly</small></div>
+          <div class="viz-arrow">➜</div>
+          <div class="viz-node">④&nbsp;Test login</div>
+          <div class="viz-arrow">➜</div>
+          <div class="viz-node">⑤&nbsp;Remove OLD cert</div>
+        </div>
+        <div class="viz-cap">Overlapping the old &amp; new certs means logins never break. Do it a week or two before the expiry date in the email.</div>
+      </div>
+      <h4>On the Azure side</h4>
+      <ol>
+        <li>Open the Snowflake enterprise app → <strong>Single sign-on</strong> → <strong>SAML Certificates</strong> section.</li>
+        <li>Click <strong>Edit</strong> → <strong>New Certificate</strong> → set an expiry → <strong>Save</strong>.</li>
+        <li>You now have two certs: the <strong>Active</strong> (old) and the <strong>Inactive</strong> (new). Don't activate yet.</li>
+        <li>Download/copy the <strong>new</strong> certificate's Base64 value.</li>
+      </ol>
+      <h4>On the Snowflake side — update the integration with the new cert</h4>
+      <pre><span class="lang">sql</span><code>USE ROLE ACCOUNTADMIN;
+
+ALTER SECURITY INTEGRATION azure_entra_sso
+  SET SAML2_X509_CERT = '&lt;paste the NEW Base64 cert, no BEGIN/END lines&gt;';</code></pre>
+      <h4>Then flip the new cert live in Azure</h4>
+      <ol start="5">
+        <li>Back in Azure, make the <strong>new</strong> certificate <strong>Active</strong>.</li>
+        <li>Test a login (use an incognito window). If it works, you're done.</li>
+        <li>Later (after confirming all is well), delete the old certificate in Azure.</li>
+      </ol>
+      <div class="callout tip">
+        <span class="ct">✅ Best practice</span>
+        <p>Do the renewal a <strong>week or two before</strong> the expiry date in the email, not on the last day. Test immediately after. Keep the password backup admin ready just in case.</p>
+      </div>
+
+      <h3>Quick "what to do when the renewal email arrives" checklist</h3>
+      <ul class="check">
+        <li>Note the <strong>expiry date</strong> in the email — schedule the work a couple of weeks earlier.</li>
+        <li>Confirm you have a <strong>password-based ACCOUNTADMIN</strong> backup that still works (Step 9).</li>
+        <li>In Azure: create a <strong>New Certificate</strong> in the Snowflake app's SAML settings.</li>
+        <li>Copy the new Base64 cert → run <code>ALTER SECURITY INTEGRATION ... SET SAML2_X509_CERT</code> in Snowflake.</li>
+        <li>Make the new cert <strong>Active</strong> in Azure.</li>
+        <li><strong>Test login</strong> in an incognito window (both IdP- and SP-initiated).</li>
+        <li>Remove/retire the <strong>old</strong> certificate once the new one is confirmed working.</li>
+        <li>(If you use SCIM/Appendix B) Also check whether the <strong>SCIM token/secret</strong> needs renewing.</li>
+      </ul>
+    </section>
+
+    <!-- ============ STEP 0 ============ -->
+    <section class="card" id="step0">
+      <h2>0. Before you start — what you need</h2>
+      <table>
+        <tr><th>Requirement</th><th>Notes for trial accounts</th></tr>
+        <tr><td>Azure / Entra ID tenant with <strong>Global Administrator</strong> or <strong>Application Administrator</strong> role</td><td>A free Azure trial gives you a tenant where you are Global Admin by default.</td></tr>
+        <tr><td>Snowflake account with <strong>ACCOUNTADMIN</strong> role</td><td>The user who created the trial is automatically granted ACCOUNTADMIN.</td></tr>
+        <tr><td>Your <strong>Snowflake account URL</strong></td><td>Looks like <code>https://&lt;org&gt;-&lt;account&gt;.snowflakecomputing.com</code> or the legacy <code>https://&lt;account_locator&gt;.&lt;region&gt;.snowflakecomputing.com</code>. Copy it from the Snowflake URL bar.</td></tr>
+        <tr><td>At least one <strong>test user</strong> that exists in BOTH systems</td><td>The email/login in Entra ID must match the user identity in Snowflake (see Step 6).</td></tr>
+      </table>
+      <div class="callout warn">
+        <span class="ct">⚠️ Trial limitation to know up front</span>
+        <p>Entra ID's <em>automatic user provisioning</em> (SCIM) to Snowflake requires a <strong>Microsoft Entra ID P1/P2 license</strong> (the free trial of Entra ID P2 covers this for 30 days). <strong>SSO sign-in itself does NOT require a premium license</strong> — the free tier is enough. This guide focuses on SSO; provisioning is covered as an optional add-on in <a href="#appB">Appendix B</a>.</p>
+      </div>
+    </section>
+
+    <!-- ============ STEP 1 ============ -->
+    <section class="card" id="step1">
+      <h2>1. Find your Snowflake account identifiers</h2>
+      <ol>
+        <li>Log into Snowflake (Snowsight) as <strong>ACCOUNTADMIN</strong>.</li>
+        <li>Note these two values — you'll paste them into Azure:
+          <ul>
+            <li><strong>Snowflake URL</strong> (the SP base URL), e.g. <code>https://ab12345.west-europe.azure.snowflakecomputing.com</code></li>
+            <li>Your <strong>account identifier</strong> (the part before <code>.snowflakecomputing.com</code>).</li>
+          </ul>
+        </li>
+        <li>Two SAML URLs are derived from your Snowflake URL — keep them handy:</li>
+      </ol>
+      <table>
+        <tr><th>Field (Azure name)</th><th>Value</th></tr>
+        <tr><td><strong>Identifier (Entity ID)</strong></td><td><code>https://&lt;your-account&gt;.snowflakecomputing.com</code></td></tr>
+        <tr><td><strong>Reply URL (ACS URL)</strong></td><td><code>https://&lt;your-account&gt;.snowflakecomputing.com/fed/login</code></td></tr>
+        <tr><td><strong>Sign-on URL</strong></td><td><code>https://&lt;your-account&gt;.snowflakecomputing.com</code></td></tr>
+      </table>
+      <p>Replace <code>&lt;your-account&gt;</code> with everything from your real Snowflake URL.</p>
+    </section>
+
+    <!-- ============ STEP 2 ============ -->
+    <section class="card" id="step2">
+      <h2>2. Create the Snowflake app in Microsoft Entra ID</h2>
+      <p>Snowflake is in the Azure app gallery, which auto-fills most settings.</p>
+      <ol>
+        <li>Go to the <a href="https://portal.azure.com" target="_blank">Azure portal</a> → search for and open <strong>Microsoft Entra ID</strong>.</li>
+        <li>In the left menu choose <strong>Enterprise applications</strong> → <strong>+ New application</strong>.</li>
+        <li>In the gallery search box, type <strong>Snowflake</strong>.</li>
+        <li>Select <strong>Snowflake</strong> from the results → give it a name (e.g. <code>Snowflake SSO</code>) → click <strong>Create</strong>.</li>
+      </ol>
+      <div class="callout note"><p>Wait a few seconds while Azure provisions the enterprise application.</p></div>
+    </section>
+
+    <!-- ============ STEP 3 ============ -->
+    <section class="card" id="step3">
+      <h2>3. Configure SAML-based Single Sign-On in Azure</h2>
+      <ol>
+        <li>In your new Snowflake enterprise app, open <strong>Single sign-on</strong> (left menu).</li>
+        <li>Select <strong>SAML</strong> as the method.</li>
+        <li>You'll see the <strong>"Set up Single Sign-On with SAML"</strong> page with numbered sections.</li>
+      </ol>
+
+      <h3>3a. Basic SAML Configuration (section 1)</h3>
+      <p>Click the <strong>pencil/Edit</strong> icon and fill in:</p>
+      <table>
+        <tr><th>Field</th><th>Value</th></tr>
+        <tr><td><strong>Identifier (Entity ID)</strong></td><td><code>https://&lt;your-account&gt;.snowflakecomputing.com</code></td></tr>
+        <tr><td><strong>Reply URL (Assertion Consumer Service URL)</strong></td><td><code>https://&lt;your-account&gt;.snowflakecomputing.com/fed/login</code></td></tr>
+        <tr><td><strong>Sign on URL</strong></td><td><code>https://&lt;your-account&gt;.snowflakecomputing.com</code></td></tr>
+      </table>
+      <p>Click <strong>Save</strong>. (The gallery app may pre-populate placeholders like <code>https://&lt;entity-id&gt;.snowflakecomputing.com</code> — overwrite them with your real account.)</p>
+
+      <h3>3b. Attributes &amp; Claims (section 2)</h3>
+      <p>Snowflake matches the incoming user by the SAML <strong>NameID</strong>. Make sure the NameID is the user's <strong>email address</strong>:</p>
+      <ol>
+        <li>Open <strong>Attributes &amp; Claims</strong> → <strong>Edit</strong>.</li>
+        <li>Set the <strong>Unique User Identifier (Name ID)</strong> to:
+          <ul>
+            <li><strong>Source attribute:</strong> <code>user.mail</code> (or <code>user.userprincipalname</code> if your trial users don't have a populated mail field — see note below)</li>
+            <li><strong>Name identifier format:</strong> <code>Email address</code></li>
+          </ul>
+        </li>
+        <li>Save.</li>
+      </ol>
+      <div class="callout warn">
+        <span class="ct">Trial gotcha</span>
+        <p>Cloud-only trial users often have a blank <code>mail</code> attribute. If so, either (a) populate the user's <strong>Email</strong> in Entra ID, or (b) use <code>user.userprincipalname</code> as the NameID <strong>and</strong> make sure the matching Snowflake user's <code>LOGIN_NAME</code> equals that UPN.</p>
+      </div>
+
+      <h3>3c. Grab the values Snowflake needs (sections 3 &amp; 4)</h3>
+      <p>From the SAML setup page copy:</p>
+      <ul>
+        <li><strong>Section 3 — SAML Certificates:</strong>
+          <ul>
+            <li><strong>Certificate (Base64)</strong> — download this <code>.cer</code> file, OR</li>
+            <li><strong>App Federation Metadata Url</strong> (an XML URL) — easiest option.</li>
+          </ul>
+        </li>
+        <li><strong>Section 4 — Set up Snowflake:</strong>
+          <ul>
+            <li><strong>Login URL</strong> (a.k.a. <em>Azure AD SSO URL</em> / <code>SSO_URL</code>)</li>
+            <li><strong>Azure AD Identifier</strong> (the IdP <code>Issuer</code>)</li>
+            <li><strong>Logout URL</strong></li>
+          </ul>
+        </li>
+      </ul>
+      <p>You'll need the <strong>certificate</strong> and the <strong>Login URL</strong> in the next step.</p>
+    </section>
+
+    <!-- ============ STEP 4 ============ -->
+    <section class="card" id="step4">
+      <h2>4. Configure Snowflake to accept Entra ID (SAML IdP)</h2>
+      <p>There are two ways. <strong>Option A (SECURITY INTEGRATION)</strong> is the modern, recommended method.</p>
+
+      <h3>Option A — Create a SAML2 Security Integration (recommended)</h3>
+      <p>Open a Snowflake worksheet as <strong>ACCOUNTADMIN</strong> and run:</p>
+      <pre><span class="lang">sql</span><code>USE ROLE ACCOUNTADMIN;
+
+CREATE OR REPLACE SECURITY INTEGRATION azure_entra_sso
+  TYPE = SAML2
+  ENABLED = TRUE
+  SAML2_ISSUER = '&lt;Azure AD Identifier — from the Azure SAML page, box "4. Set up Snowflake" (collected in Step 3c)&gt;'
+  SAML2_SSO_URL = '&lt;Login URL — from the Azure SAML page, box "4. Set up Snowflake" (collected in Step 3c)&gt;'
+  SAML2_PROVIDER = 'CUSTOM'
+  SAML2_X509_CERT = '&lt;paste Base64 cert body — no BEGIN/END lines, no line breaks&gt;'
+  SAML2_SP_INITIATED_LOGIN_PAGE_LABEL = 'Azure SSO'
+  SAML2_ENABLE_SP_INITIATED = TRUE;</code></pre>
+      <div class="callout note">
+        <p><strong>"Section 4" here means a box on the Azure portal, not Step 4 of this guide.</strong> On the Azure <em>"Set up Single Sign-On with SAML"</em> page, the boxes are numbered 1–4; the last box is titled <strong>"4. Set up Snowflake"</strong> and contains both values:</p>
+        <ul>
+          <li><strong>Azure AD Identifier</strong> → <code>SAML2_ISSUER</code> (looks like <code>https://sts.windows.net/&lt;tenant-id&gt;/</code>)</li>
+          <li><strong>Login URL</strong> → <code>SAML2_SSO_URL</code> (looks like <code>https://login.microsoftonline.com/&lt;tenant-id&gt;/saml2</code>)</li>
+        </ul>
+        <p>You already copied these in <strong>Step 3c</strong> above. Path: Entra ID → Enterprise applications → your Snowflake app → Single sign-on → box "4. Set up Snowflake".</p>
+      </div>
+      <p>Notes:</p>
+      <ul>
+        <li><code>SAML2_X509_CERT</code> = the contents of the <strong>Certificate (Base64)</strong> file from Azure box 3 (SAML Certificates), with the <code>-----BEGIN CERTIFICATE-----</code> / <code>-----END CERTIFICATE-----</code> lines <strong>removed</strong> (Snowflake tolerates the internal line breaks, but strip the header/footer).</li>
+        <li><code>SAML2_ENABLE_SP_INITIATED = TRUE</code> adds an <strong>"Azure SSO"</strong> button on the Snowflake login page (service-provider-initiated flow).</li>
+      </ul>
+      <p>Verify it:</p>
+      <pre><span class="lang">sql</span><code>DESC SECURITY INTEGRATION azure_entra_sso;</code></pre>
+
+      <h3>Option B — Legacy account parameters (older method)</h3>
+      <pre><span class="lang">sql</span><code>USE ROLE ACCOUNTADMIN;
+
+ALTER ACCOUNT SET SAML_IDENTITY_PROVIDER = '{
+  "certificate": "&lt;Base64 cert, no headers&gt;",
+  "ssoUrl": "&lt;Login URL&gt;",
+  "type": "custom",
+  "label": "Azure SSO"
+}';
+
+ALTER ACCOUNT SET SSO_LOGIN_PAGE = TRUE;</code></pre>
+      <div class="callout note"><p>Prefer <strong>Option A</strong> for new setups. Only use Option B if you have an older account that requires it.</p></div>
+    </section>
+
+    <!-- ============ STEP 5 ============ -->
+    <section class="card" id="step5">
+      <h2>5. Create a test user in Microsoft Entra ID</h2>
+      <p>To validate SSO end-to-end you need a real identity on <em>both</em> sides. Start by creating a dedicated test user in Entra ID. (Skip this if you already have a user you want to test with — just note their <strong>email / UPN</strong>.)</p>
+
+      <h3>5a. Where to create it</h3>
+      <p>Users live in the directory itself, <strong>not</strong> inside the enterprise app:</p>
+      <ol>
+        <li>Azure portal → search for and open <strong>Microsoft Entra ID</strong>.</li>
+        <li>Left menu → <strong>Users</strong> → <strong>All users</strong>.</li>
+        <li>Click <strong>+ New user</strong> → <strong>Create new user</strong> (not "Invite external user" — that's for guests).</li>
+      </ol>
+
+      <h3>5b. What details to fill in</h3>
+      <table>
+        <tr><th>Field</th><th>What to enter</th></tr>
+        <tr><td><strong>User principal name (UPN)</strong></td><td>The login, e.g. <code>jane.doe@yourtenant.onmicrosoft.com</code>. The domain dropdown shows your tenant's verified domains. <em>This is the value SSO will send as the NameID</em> if you used <code>user.userprincipalname</code> in Step 3b.</td></tr>
+        <tr><td><strong>Mail nickname</strong></td><td>Usually auto-filled from the UPN (e.g. <code>jane.doe</code>). Leave as derived unless you have a convention.</td></tr>
+        <tr><td><strong>Display name</strong></td><td>Friendly name, e.g. <code>Jane Doe</code>.</td></tr>
+        <tr><td><strong>Password</strong></td><td>Tick <strong>Auto-generate</strong> and copy it — you'll need it for the first sign-in. The user is prompted to change it on first login.</td></tr>
+        <tr><td><strong>Email (Properties → Contact info)</strong></td><td><strong>Important:</strong> set the <strong>Email</strong> attribute to the same address, e.g. <code>jane.doe@yourtenant.onmicrosoft.com</code>. If you used <code>user.mail</code> as the NameID in Step 3b and this is blank, login fails. You can set it on the create screen (Properties tab) or edit the user afterwards.</td></tr>
+        <tr><td><strong>Account enabled</strong></td><td>Make sure it's <strong>enabled</strong> (default).</td></tr>
+      </table>
+      <p>Click <strong>Review + create</strong> → <strong>Create</strong>.</p>
+
+      <div class="callout warn">
+        <span class="ct">Match this to your NameID choice (Step 3b)</span>
+        <p>Whatever you picked as the SAML <strong>NameID</strong> is the value that must line up with Snowflake's <code>LOGIN_NAME</code> in Step&nbsp;7:</p>
+        <ul>
+          <li>NameID = <code>user.mail</code> → the user's <strong>Email</strong> attribute must be populated (cloud-only trial users often have a blank mail field — fill it in here).</li>
+          <li>NameID = <code>user.userprincipalname</code> → the <strong>UPN</strong> is used; no extra step needed.</li>
+        </ul>
+        <p>Write down the exact address you'll be testing with — you'll paste it into Snowflake verbatim.</p>
+      </div>
+    </section>
+
+    <!-- ============ STEP 6 ============ -->
+    <section class="card" id="step6">
+      <h2>6. Assign the user to the Snowflake app (Users and groups)</h2>
+      <p>Even with SSO configured, a user <strong>cannot</strong> sign in to Snowflake through Azure until they're explicitly <strong>assigned</strong> to the enterprise app.</p>
+      <ol>
+        <li>Azure portal → <strong>Microsoft Entra ID</strong> → <strong>Enterprise applications</strong> → open your <strong>Snowflake SSO</strong> app.</li>
+        <li>In the app's left menu, click <strong>Users and groups</strong>.</li>
+        <li>Click <strong>+ Add user/group</strong> at the top.</li>
+        <li>Under <strong>Users</strong>, click <strong>None Selected</strong> → search for and tick your test user (e.g. <em>Jane Doe</em>) → <strong>Select</strong>.</li>
+        <li>If the app defines app roles, a <strong>Select a role</strong> option appears — choose the default (often <em>User</em>) if prompted.</li>
+        <li>Click <strong>Assign</strong>. The user now shows in the <strong>Users and groups</strong> list.</li>
+      </ol>
+      <div class="callout note">
+        <p><strong>Users vs. groups:</strong> On the <strong>free</strong> Entra ID tier you can only assign <strong>individual users</strong>. Assigning a whole <strong>group</strong> to an app requires Entra ID <strong>P1/P2</strong> (covered by the P2 trial). For this validation, assigning the single test user is enough.</p>
+      </div>
+      <div class="callout tip">
+        <p>Want everyone in the tenant to get the app without assigning each person? In the app's <strong>Properties</strong>, set <strong>Assignment required?</strong> to <strong>No</strong>. For a controlled test, leave it <strong>Yes</strong> and assign explicitly.</p>
+      </div>
+    </section>
+
+    <!-- ============ STEP 7 ============ -->
+    <section class="card" id="step7">
+      <h2>7. Make sure the user exists in Snowflake with a matching login</h2>
+      <p>SSO authenticates the user, but the user <strong>must already exist</strong> in Snowflake, and their <code>LOGIN_NAME</code> must equal the SAML NameID you chose in Step 3b (the email or UPN). Use the <strong>exact same address</strong> you noted for the Entra test user in Step 5 — copy it verbatim.</p>
+      <pre><span class="lang">sql</span><code>USE ROLE ACCOUNTADMIN;
+
+CREATE USER jdoe
+  LOGIN_NAME = 'jane.doe@yourtenant.onmicrosoft.com'  -- must match the SAML NameID
+  DISPLAY_NAME = 'Jane Doe'
+  EMAIL = 'jane.doe@yourtenant.onmicrosoft.com'
+  DEFAULT_ROLE = PUBLIC
+  MUST_CHANGE_PASSWORD = FALSE;
+
+-- optional: grant a usable role
+GRANT ROLE PUBLIC TO USER jdoe;</code></pre>
+      <div class="callout warn"><p>If the NameID coming from Azure is the <strong>email</strong> but the Snowflake <code>LOGIN_NAME</code> is the <strong>username</strong>, the login will fail with <em>"The user you were trying to authenticate as doesn't exist."</em> Keep them identical.</p></div>
+    </section>
+
+    <!-- ============ STEP 8 ============ -->
+    <section class="card" id="step8">
+      <h2>8. Test the connection</h2>
+      <h3>Test 1 — IdP-initiated (from Azure)</h3>
+      <ol>
+        <li>Back in the SAML SSO page (section 5) click <strong>Test</strong> (or use the <strong>Microsoft My Apps</strong> portal at <code>https://myapps.microsoft.com</code> and click the Snowflake tile).</li>
+        <li>You should be redirected to Snowflake and logged straight in.</li>
+      </ol>
+      <h3>Test 2 — SP-initiated (from Snowflake)</h3>
+      <ol>
+        <li>Go to your Snowflake login page <code>https://&lt;your-account&gt;.snowflakecomputing.com</code>.</li>
+        <li>Click the <strong>"Azure SSO"</strong> button.</li>
+        <li>Authenticate with Entra ID → you should land in Snowsight.</li>
+      </ol>
+      <div class="callout tip"><p>Use an <strong>incognito/private window</strong> for testing so you don't reuse an existing session.</p></div>
+    </section>
+
+    <!-- ============ STEP 9 ============ -->
+    <section class="card" id="step9">
+      <h2>9. (Recommended) Keep an admin password login as a backup</h2>
+      <p>If SSO is misconfigured you can lock yourself out. <strong>Always</strong> keep at least one <code>ACCOUNTADMIN</code> user that can log in with a username/password (or key-pair), and don't disable password login account-wide until SSO is fully verified.</p>
+      <pre><span class="lang">sql</span><code>-- Confirm at least one ACCOUNTADMIN can still use password auth
+SHOW USERS;</code></pre>
+    </section>
+
+    <!-- ============ TROUBLESHOOTING ============ -->
+    <section class="card" id="trouble">
+      <h2>Troubleshooting</h2>
+      <table>
+        <tr><th>Symptom</th><th>Likely cause / fix</th></tr>
+        <tr><td><em>"User doesn't exist"</em> after Azure auth</td><td><code>LOGIN_NAME</code> in Snowflake ≠ SAML NameID. Align them (Step 7).</td></tr>
+        <tr><td>Redirect loop / "invalid SAML response"</td><td><code>SAML2_SSO_URL</code> or <code>SAML2_ISSUER</code> wrong, or cert mismatch. Re-copy from the Azure SAML page, boxes 4 &amp; 3.</td></tr>
+        <tr><td>Cert errors</td><td>You left the <code>BEGIN/END CERTIFICATE</code> lines in <code>SAML2_X509_CERT</code>. Remove them.</td></tr>
+        <tr><td>Reply URL mismatch</td><td>ACS URL must be exactly <code>https://&lt;account&gt;.snowflakecomputing.com/fed/login</code>.</td></tr>
+        <tr><td>No "Azure SSO" button on Snowflake page</td><td>Set <code>SAML2_ENABLE_SP_INITIATED = TRUE</code> and <code>SSO_LOGIN_PAGE = TRUE</code>.</td></tr>
+        <tr><td>"AADSTS50105: not assigned to a role for the application"</td><td>Assign the user to the app (Step 6).</td></tr>
+        <tr><td>Blank NameID / wrong email</td><td>Trial user has empty <code>mail</code>. Populate it or switch NameID to UPN (Step 3b).</td></tr>
+      </table>
+      <p>Useful Snowflake check:</p>
+      <pre><span class="lang">sql</span><code>-- See recent login attempts and failure reasons
+SELECT event_timestamp, user_name, reported_client_type,
+       first_authentication_factor, error_code, error_message
+FROM TABLE(INFORMATION_SCHEMA.LOGIN_HISTORY(
+        DATEADD('hour', -1, CURRENT_TIMESTAMP()), CURRENT_TIMESTAMP()))
+ORDER BY event_timestamp DESC;</code></pre>
+    </section>
+
+    <!-- ============ APPENDIX A ============ -->
+    <section class="card" id="appA">
+      <h2>Appendix A — Quick reference of all values</h2>
+      <table>
+        <tr><th>Azure field</th><th>Snowflake equivalent</th></tr>
+        <tr><td>Identifier (Entity ID)</td><td><code>https://&lt;account&gt;.snowflakecomputing.com</code></td></tr>
+        <tr><td>Reply URL (ACS)</td><td><code>https://&lt;account&gt;.snowflakecomputing.com/fed/login</code></td></tr>
+        <tr><td>Login URL (Azure box 4)</td><td><code>SAML2_SSO_URL</code></td></tr>
+        <tr><td>Azure AD Identifier (Azure box 4)</td><td><code>SAML2_ISSUER</code></td></tr>
+        <tr><td>Certificate (Base64, Azure box 3)</td><td><code>SAML2_X509_CERT</code></td></tr>
+      </table>
+    </section>
+
+    <!-- ============ APPENDIX B ============ -->
+    <section class="card" id="appB">
+      <h2>Appendix B — (Optional) Automatic user provisioning (SCIM)</h2>
+
+      <h3 id="scim-what">What SCIM is and why you'd use it</h3>
+      <p>SSO (the main guide) handles <strong>logging in</strong> — but it assumes the user <em>already exists</em> in Snowflake. <strong>SCIM</strong> handles the other half: <strong>creating, updating, and removing those users automatically</strong>, so you don't have to run <code>CREATE USER</code> by hand for every person.</p>
+      <div class="callout analogy">
+        <span class="ct">🔄 Simple way to think about it</span>
+        <p><strong>SSO</strong> = the <em>door lock</em> that checks who's allowed in. <strong>SCIM</strong> = the <em>HR system</em> that keeps the guest list up to date — adding new joiners, updating job changes, and removing leavers — automatically.</p>
+      </div>
+      <div class="viz">
+        <div class="viz-title">SSO vs SCIM — two different jobs</div>
+        <div class="viz-row">
+          <div class="viz-node">🚪 SSO (SAML)<small>checks who's allowed in,<br>at login time</small></div>
+          <div class="viz-node alt">🔄 SCIM<small>keeps the guest list current:<br>add / update / remove users</small></div>
+        </div>
+        <div class="viz-row" style="margin-top:14px">
+          <div class="viz-node alt">🛂 Entra ID<small>you assign a user/group</small></div>
+          <div class="viz-arrow">push (SCIM token) ➜</div>
+          <div class="viz-node ice">❄️ Snowflake<small>user auto-created;<br>leaver auto-disabled</small></div>
+        </div>
+        <div class="viz-cap">SSO = the door lock. SCIM = the HR system that maintains who exists. Set up &amp; verify SSO first, then add SCIM on top.</div>
+      </div>
+      <p>With SCIM turned on: when you <strong>assign</strong> a user (or group) to the Snowflake app in Azure, Azure <strong>creates</strong> the matching Snowflake user for you. When you <strong>unassign</strong> someone or they leave the company, Azure <strong>disables</strong> them in Snowflake. No manual SQL per user.</p>
+      <div class="callout warn"><p><strong>Requires Microsoft Entra ID P1 or P2</strong> (the 30-day P2 trial works). Automatic provisioning is <strong>not</strong> available on the free Entra tier — SSO still is.</p></div>
+
+      <h3 id="scim-how">How SSO and SCIM work together</h3>
+      <table>
+        <tr><th></th><th>SSO (SAML)</th><th>SCIM</th></tr>
+        <tr><td><strong>Job</strong></td><td>Authenticates a login</td><td>Creates / updates / removes the user record</td></tr>
+        <tr><td><strong>Direction</strong></td><td>User → logs in</td><td>Azure → pushes users into Snowflake</td></tr>
+        <tr><td><strong>Secret used</strong></td><td>SAML signing <strong>certificate</strong></td><td>SCIM <strong>bearer token</strong></td></tr>
+        <tr><td><strong>Needs paid license?</strong></td><td>No (free tier OK)</td><td>Yes (Entra P1/P2)</td></tr>
+      </table>
+      <div class="callout tip"><p>You can run SSO <strong>without</strong> SCIM (just create users manually — Step 6). SCIM is purely a convenience layer on top. Set up and verify SSO <em>first</em>, then add SCIM.</p></div>
+
+      <h3 id="scim-snowflake">Step 1 — Set up the Snowflake side</h3>
+      <p>In a Snowflake worksheet as <strong>ACCOUNTADMIN</strong>, create a role for the provisioner, then the SCIM integration, then generate the token:</p>
+      <pre><span class="lang">sql</span><code>USE ROLE ACCOUNTADMIN;
+
+-- 1. Role that Azure will "act as" when creating users/roles
+CREATE OR REPLACE ROLE aad_provisioner;
+GRANT CREATE USER ON ACCOUNT TO ROLE aad_provisioner;
+GRANT CREATE ROLE ON ACCOUNT TO ROLE aad_provisioner;
+GRANT ROLE aad_provisioner TO ROLE ACCOUNTADMIN;
+
+-- 2. The SCIM integration itself
+CREATE OR REPLACE SECURITY INTEGRATION aad_scim_provisioning
+  TYPE = SCIM
+  SCIM_CLIENT = 'AZURE'
+  RUN_AS_ROLE = 'AAD_PROVISIONER';
+
+-- 3. Generate the bearer token Azure will use (COPY IT NOW — shown only once)
+SELECT SYSTEM$GENERATE_SCIM_ACCESS_TOKEN('AAD_SCIM_PROVISIONING');</code></pre>
+      <div class="callout warn"><p>The token from step 3 is <strong>displayed only once</strong> and is valid for <strong>6 months</strong>. Copy it immediately and store it safely — you'll paste it into Azure next, and you'll need to rotate it before it expires (see <a href="#scim-token">token rotation</a> below).</p></div>
+
+      <h3 id="scim-azure">Step 2 — Set up the Azure side</h3>
+      <ol>
+        <li>In the Snowflake enterprise app → <strong>Provisioning</strong> → <strong>Get started</strong> → set <strong>Provisioning Mode</strong> to <strong>Automatic</strong>.</li>
+        <li>Under <strong>Admin Credentials</strong>, enter:
+          <ul>
+            <li><strong>Tenant URL:</strong> <code>https://&lt;account&gt;.snowflakecomputing.com/scim/v2/</code></li>
+            <li><strong>Secret Token:</strong> the token from <code>SYSTEM$GENERATE_SCIM_ACCESS_TOKEN</code> above.</li>
+          </ul>
+        </li>
+        <li>Click <strong>Test Connection</strong> → it should report success → <strong>Save</strong>.</li>
+        <li>Don't turn it On yet — first configure <strong>scope</strong> and <strong>mappings</strong> (below), then switch <strong>Provisioning Status</strong> to <strong>On</strong>.</li>
+      </ol>
+
+      <h3 id="scim-scope">Step 3 — Choose the scope (who gets synced)</h3>
+      <p>Under <strong>Settings</strong> → <strong>Scope</strong>, pick one:</p>
+      <table>
+        <tr><th>Scope option</th><th>Meaning</th></tr>
+        <tr><td><strong>Sync only assigned users and groups</strong> <em>(recommended)</em></td><td>Only the people/groups you explicitly add under <strong>Users and groups</strong> are created in Snowflake. Safe and predictable.</td></tr>
+        <tr><td>Sync all users and groups</td><td>Everyone in your directory is pushed to Snowflake. Rarely what you want — avoid on shared tenants.</td></tr>
+      </table>
+      <div class="callout tip"><p>Stick with <strong>"assigned users and groups"</strong>. It means the same <strong>Users and groups</strong> list you set up for SSO in Step 5 also controls who gets provisioned — one list, two purposes.</p></div>
+
+      <h3 id="scim-mapping">Step 4 — Attribute mappings (which fields map to what)</h3>
+      <p>Under <strong>Mappings</strong> → <strong>Provision Azure Active Directory Users</strong>, Azure decides which Entra field becomes which Snowflake field. The defaults from the gallery app are usually correct. The ones that matter most:</p>
+      <table>
+        <tr><th>Azure (Entra) attribute</th><th>Snowflake attribute</th><th>Notes</th></tr>
+        <tr><td><code>userPrincipalName</code></td><td><code>userName</code> → becomes Snowflake <code>LOGIN_NAME</code></td><td><strong>Most important.</strong> This must match the SAML <strong>NameID</strong> from SSO (Step 3b), or SSO login won't find the SCIM-created user.</td></tr>
+        <tr><td><code>mail</code></td><td><code>emails[type eq "work"].value</code> → <code>EMAIL</code></td><td>Used for notifications.</td></tr>
+        <tr><td><code>displayName</code></td><td><code>name.formatted</code> / <code>displayName</code></td><td>The friendly name shown in Snowflake.</td></tr>
+        <tr><td><code>givenName</code> / <code>surname</code></td><td><code>name.givenName</code> / <code>name.familyName</code></td><td>First / last name.</td></tr>
+        <tr><td><code>Switch([IsSoftDeleted]…)</code></td><td><code>active</code></td><td>Controls enable/disable — drives deprovisioning (below).</td></tr>
+      </table>
+      <div class="callout warn">
+        <span class="ct">⚠️ Keep SSO and SCIM identities aligned</span>
+        <p>SSO matches users by <strong>NameID</strong>; SCIM creates users with <strong>userName</strong> → <code>LOGIN_NAME</code>. If SSO sends the email but SCIM provisions the UPN (or vice-versa) and they differ, users get created but <strong>can't log in</strong>. Make both sides use the <strong>same</strong> identifier (usually <code>userPrincipalName</code> / email).</p>
+      </div>
+
+      <h3 id="scim-groups">Step 5 — Group provisioning → Snowflake roles</h3>
+      <p>If you enable <strong>Provision Azure Active Directory Groups</strong>, each assigned Entra group is created as a <strong>Snowflake role</strong>, and group membership is synced as <strong>role grants</strong>:</p>
+      <ul>
+        <li>Entra group <code>Snowflake-Analysts</code> → Snowflake role <code>SNOWFLAKE-ANALYSTS</code>.</li>
+        <li>Adding a user to that Entra group → Azure grants them the role in Snowflake.</li>
+      </ul>
+      <div class="callout note"><p>SCIM <strong>creates the role and the grants</strong>, but it does <strong>not</strong> grant privileges <em>to</em> that role (e.g. access to a warehouse or database). You still grant those once in Snowflake: <code>GRANT USAGE ON WAREHOUSE … TO ROLE "SNOWFLAKE-ANALYSTS";</code>. After that, membership stays automatic.</p></div>
+
+      <h3 id="scim-deprovision">Step 6 — Deprovisioning (what happens when someone leaves)</h3>
+      <p>This is a big reason to use SCIM. When a user is <strong>unassigned</strong> from the app, <strong>disabled</strong>, or <strong>deleted</strong> in Entra:</p>
+      <ul>
+        <li>Azure sends an update setting the Snowflake user's <code>active</code> attribute to <strong>false</strong>.</li>
+        <li>Snowflake <strong>disables</strong> the user (sets <code>DISABLED = TRUE</code>) — it does <strong>not</strong> drop/delete them, so their history is preserved.</li>
+        <li>The disabled user can no longer log in via SSO.</li>
+      </ul>
+      <div class="callout tip"><p>Because deprovisioning <em>disables</em> rather than <em>deletes</em>, re-assigning the user later re-enables the same account. To fully remove a user you still run <code>DROP USER</code> manually in Snowflake.</p></div>
+
+      <h3 id="scim-token">Step 7 — Rotating the SCIM token (the yearly-renewal cousin)</h3>
+      <p>Just like the SAML <strong>certificate</strong> expires, the SCIM <strong>bearer token</strong> expires (default <strong>6 months</strong>). If it lapses, provisioning silently stops — new joiners won't get accounts and leavers won't get disabled. Rotate it before expiry:</p>
+      <pre><span class="lang">sql</span><code>USE ROLE ACCOUNTADMIN;
+
+-- Generate a fresh token for the existing integration
+SELECT SYSTEM$GENERATE_SCIM_ACCESS_TOKEN('AAD_SCIM_PROVISIONING');</code></pre>
+      <ol>
+        <li>Copy the new token.</li>
+        <li>In Azure → Snowflake app → <strong>Provisioning</strong> → <strong>Admin Credentials</strong> → paste it into <strong>Secret Token</strong>.</li>
+        <li><strong>Test Connection</strong> → <strong>Save</strong>.</li>
+      </ol>
+      <div class="callout warn"><p>Set yourself a reminder ~<strong>5 months</strong> out. This is the same "renew the secret" habit as the SAML certificate — just a different secret. See the <a href="#certs">certificates &amp; secrets</a> section.</p></div>
+
+      <h3 id="scim-trouble">SCIM troubleshooting</h3>
+      <table>
+        <tr><th>Symptom</th><th>Likely cause / fix</th></tr>
+        <tr><td>Test Connection fails</td><td>Wrong Tenant URL (must end with <code>/scim/v2/</code>) or expired/incorrect token. Regenerate the token (Step 7).</td></tr>
+        <tr><td>User created by SCIM but can't log in via SSO</td><td>SCIM <code>userName</code> ≠ SAML NameID. Align mappings (Step 4) and the SSO NameID (Step 3b).</td></tr>
+        <tr><td>Users not appearing in Snowflake</td><td>Scope set to "assigned only" but user isn't assigned, OR provisioning is Off, OR you're waiting on the cycle (Azure syncs roughly every <strong>40 minutes</strong>). Use <strong>Provision on demand</strong> to test one user instantly.</td></tr>
+        <tr><td>Groups not creating roles</td><td>"Provision Azure AD Groups" mapping is disabled, or the group isn't assigned to the app.</td></tr>
+        <tr><td>"Insufficient privileges" in provisioning logs</td><td>The <code>RUN_AS_ROLE</code> (e.g. <code>AAD_PROVISIONER</code>) lacks <code>CREATE USER</code>/<code>CREATE ROLE</code>. Re-grant (Step 1).</td></tr>
+        <tr><td>Leaver still active in Snowflake</td><td>Check the <code>active</code> attribute mapping exists (Step 4); confirm the user was truly unassigned/disabled in Entra.</td></tr>
+      </table>
+      <p>Check Azure's <strong>Provisioning logs</strong> (in the app, under <strong>Provisioning</strong>) for per-user success/failure details, and on the Snowflake side:</p>
+      <pre><span class="lang">sql</span><code>-- See users and their enabled/disabled + login-name state
+SHOW USERS;
+-- Inspect the SCIM integration
+DESC SECURITY INTEGRATION aad_scim_provisioning;</code></pre>
+    </section>
+
+    <!-- ============ SUMMARY ============ -->
+    <section class="card" id="summary">
+      <h2>Summary checklist</h2>
+      <ul class="check">
+        <li>Got Snowflake account URL + ACS/Entity ID values (Step 1)</li>
+        <li>Added Snowflake from Azure gallery (Step 2)</li>
+        <li>Filled Basic SAML config — Identifier, Reply URL, Sign-on URL (Step 3a)</li>
+        <li>Set NameID = email (Step 3b)</li>
+        <li>Copied Login URL + Certificate from Azure (Step 3c)</li>
+        <li>Created <code>SAML2</code> security integration in Snowflake (Step 4 Option A)</li>
+        <li>Created a test user in Entra ID with email/UPN matching the NameID (Step 5)</li>
+        <li>Assigned that user to the app under Users and groups (Step 6)</li>
+        <li>Created matching Snowflake user with correct <code>LOGIN_NAME</code> (Step 7)</li>
+        <li>Tested both IdP- and SP-initiated login (Step 8)</li>
+        <li>Kept a password-based ACCOUNTADMIN backup (Step 9)</li>
+      </ul>
+      <div class="footer">Azure Entra ID ↔ Snowflake SSO Setup Guide · Open this file in any web browser.</div>
+    </section>
+
+  </main>
+</div>
+</body>
+</html>

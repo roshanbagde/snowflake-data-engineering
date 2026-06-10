@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Portal Fundamentals — A Visual Learning Guide</title>
+<style>
+  :root{
+    --azure:#0078d4;
+    --azure-dark:#005a9e;
+    --azure-light:#deecf9;
+    --bg:#f3f6fb;
+    --card:#ffffff;
+    --ink:#1b1f23;
+    --muted:#5c6b7a;
+    --line:#e1e7ef;
+    --green:#107c10;
+    --amber:#ca5010;
+    --purple:#5c2d91;
+    --teal:#008272;
+    --shadow:0 2px 10px rgba(0,40,90,.08);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;font-family:'Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.6;font-size:16px;
+  }
+  /* ---------- Layout ---------- */
+  .wrap{display:flex;max-width:1500px;margin:0 auto;}
+  nav.side{
+    width:290px;flex:0 0 290px;position:sticky;top:0;height:100vh;overflow-y:auto;
+    background:#0b2138;color:#cfe0f0;padding:0 0 40px;
+  }
+  nav.side .brand{
+    padding:22px 20px;background:linear-gradient(135deg,#0078d4,#004e8c);color:#fff;
+    position:sticky;top:0;z-index:2;
+  }
+  nav.side .brand h1{font-size:18px;margin:0;line-height:1.3}
+  nav.side .brand span{font-size:12px;opacity:.85}
+  nav.side a{display:block;color:#cfe0f0;text-decoration:none;padding:7px 20px 7px 22px;font-size:13.5px;border-left:3px solid transparent}
+  nav.side a:hover{background:#13314f;color:#fff;border-left-color:var(--azure)}
+  nav.side .grp{padding:14px 20px 5px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#5e83a8;font-weight:700}
+  main{flex:1;min-width:0;padding:0 48px 100px;}
+  @media(max-width:980px){
+    nav.side{display:none}
+    main{padding:0 18px 60px}
+  }
+  /* ---------- Hero ---------- */
+  header.hero{
+    background:linear-gradient(135deg,#0078d4 0%,#003a70 100%);
+    color:#fff;padding:54px 48px;margin:0 -48px 36px;border-radius:0 0 22px 22px;
+  }
+  @media(max-width:980px){header.hero{margin:0 -18px 28px;padding:38px 22px;border-radius:0 0 16px 16px}}
+  header.hero h1{font-size:34px;margin:0 0 10px}
+  header.hero p{font-size:17px;max-width:760px;opacity:.95;margin:0}
+  .hero-tags{margin-top:18px;display:flex;flex-wrap:wrap;gap:8px}
+  .hero-tags span{background:rgba(255,255,255,.16);padding:5px 13px;border-radius:20px;font-size:13px;backdrop-filter:blur(4px)}
+  /* ---------- Sections & cards ---------- */
+  section{margin:0 0 40px;scroll-margin-top:14px}
+  h2{font-size:25px;border-bottom:3px solid var(--azure);padding-bottom:8px;margin:46px 0 18px;display:flex;align-items:center;gap:10px}
+  h2 .ic{width:34px;height:34px;flex:0 0 34px;background:var(--azure-light);border-radius:9px;display:grid;place-items:center;font-size:19px}
+  h3{font-size:19px;color:var(--azure-dark);margin:26px 0 10px}
+  h4{font-size:16px;margin:18px 0 6px;color:var(--purple)}
+  p{margin:8px 0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:22px 24px;box-shadow:var(--shadow);margin:14px 0}
+  .lead{font-size:17px;color:var(--muted)}
+  code{background:#eef2f7;padding:2px 7px;border-radius:5px;font-family:'Cascadia Code',Consolas,monospace;font-size:14px;color:#0a4a86}
+  .path{background:#11243a;color:#9fd2ff;padding:6px 12px;border-radius:7px;font-family:Consolas,monospace;font-size:13.5px;display:inline-block;margin:3px 0}
+  ul,ol{margin:8px 0 8px 4px;padding-left:22px}
+  li{margin:5px 0}
+  /* ---------- Callouts ---------- */
+  .note,.tip,.warn,.key{border-radius:10px;padding:13px 17px;margin:14px 0;font-size:14.5px;border-left:5px solid}
+  .note{background:#eef6ff;border-color:var(--azure)}
+  .tip{background:#eafaf0;border-color:var(--green)}
+  .warn{background:#fff4ec;border-color:var(--amber)}
+  .key{background:#f4eefb;border-color:var(--purple)}
+  .note b,.tip b,.warn b,.key b{display:block;margin-bottom:2px}
+  /* ---------- Tables ---------- */
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px;background:#fff;border-radius:10px;overflow:hidden;box-shadow:var(--shadow)}
+  th{background:var(--azure);color:#fff;text-align:left;padding:11px 13px;font-weight:600}
+  td{padding:10px 13px;border-top:1px solid var(--line);vertical-align:top}
+  tr:nth-child(even) td{background:#f8fbff}
+  /* ---------- Diagrams ---------- */
+  .diagram{background:#fbfdff;border:1px dashed #b8d3ee;border-radius:14px;padding:22px;margin:18px 0;text-align:center}
+  .diagram .cap{font-size:13px;color:var(--muted);margin-top:10px;font-style:italic}
+  .flow{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px}
+  .box{background:#fff;border:2px solid var(--azure);border-radius:10px;padding:12px 16px;font-size:13.5px;font-weight:600;color:var(--azure-dark);min-width:90px;box-shadow:var(--shadow)}
+  .box.g{border-color:var(--green);color:var(--green)}
+  .box.p{border-color:var(--purple);color:var(--purple)}
+  .box.t{border-color:var(--teal);color:var(--teal)}
+  .box.a{border-color:var(--amber);color:var(--amber)}
+  .arrow{font-size:22px;color:var(--azure);font-weight:700}
+  .arrow.dn{transform:rotate(90deg)}
+  /* hierarchy tree */
+  .tree{font-size:14px}
+  .tree .lvl{display:flex;align-items:center;gap:12px;margin:6px 0}
+  .tree .node{padding:9px 16px;border-radius:8px;font-weight:600;color:#fff;min-width:160px}
+  .tree .n0{background:#5c2d91}
+  .tree .n1{background:#0078d4;margin-left:28px}
+  .tree .n2{background:#008272;margin-left:56px}
+  .tree .n3{background:#ca5010;margin-left:84px}
+  .tree .desc{color:var(--muted);font-size:13px}
+  /* grid of mini cards */
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin:14px 0}
+  .mini{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;box-shadow:var(--shadow)}
+  .mini .h{font-weight:700;color:var(--azure-dark);display:flex;align-items:center;gap:8px;margin-bottom:6px}
+  .mini .e{font-size:22px}
+  .mini p{font-size:13.5px;color:var(--muted);margin:4px 0 0}
+  /* steps */
+  .steps{counter-reset:s;list-style:none;padding:0;margin:14px 0}
+  .steps li{counter-increment:s;position:relative;padding:10px 0 10px 48px;border-bottom:1px dashed var(--line)}
+  .steps li:before{content:counter(s);position:absolute;left:0;top:9px;width:32px;height:32px;background:var(--azure);color:#fff;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:14px}
+  /* pills */
+  .pill{display:inline-block;background:var(--azure-light);color:var(--azure-dark);padding:3px 11px;border-radius:14px;font-size:12.5px;font-weight:600;margin:2px}
+  /* toc cards */
+  .toc{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+  .toc a{text-decoration:none;color:inherit;background:#fff;border:1px solid var(--line);border-radius:11px;padding:14px 16px;display:block;box-shadow:var(--shadow);transition:.15s}
+  .toc a:hover{border-color:var(--azure);transform:translateY(-2px)}
+  .toc a b{color:var(--azure-dark);font-size:15px}
+  .toc a span{display:block;color:var(--muted);font-size:13px;margin-top:3px}
+  .anatomy{display:flex;border:2px solid var(--azure);border-radius:12px;overflow:hidden;margin:14px 0;font-size:13px}
+  .anatomy .col{flex:1;padding:14px;border-right:1px solid var(--line)}
+  .anatomy .col:last-child{border-right:0}
+  .anatomy .col h5{margin:0 0 6px;color:var(--azure-dark);font-size:14px}
+  details{background:#fff;border:1px solid var(--line);border-radius:10px;padding:4px 16px;margin:10px 0;box-shadow:var(--shadow)}
+  summary{cursor:pointer;font-weight:600;padding:10px 0;color:var(--azure-dark)}
+  hr{border:0;border-top:1px solid var(--line);margin:30px 0}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;justify-content:center;margin-top:8px}
+  .legend span{display:flex;align-items:center;gap:6px}
+  .dot{width:13px;height:13px;border-radius:3px;display:inline-block}
+  footer{text-align:center;color:var(--muted);font-size:13px;padding:30px;border-top:1px solid var(--line);margin-top:40px}
+  .kbd{background:#fff;border:1px solid #c7d2de;border-bottom-width:2px;border-radius:5px;padding:1px 7px;font-size:12.5px;font-family:Consolas,monospace}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ============ SIDEBAR ============ -->
+<nav class="side">
+  <div class="brand">
+    <h1>☁️ Azure Portal Fundamentals</h1>
+    <span>A visual, beginner-friendly guide</span>
+  </div>
+  <div class="grp">Start Here</div>
+  <a href="#what">1. What is Azure & the Portal</a>
+  <a href="#tour">2. Portal Tour (the screen)</a>
+  <a href="#hierarchy">3. The Azure Hierarchy</a>
+  <a href="#resources">4. Resources & Resource Groups</a>
+  <a href="#regions">5. Regions & Availability</a>
+
+  <div class="grp">Identity & Admin</div>
+  <a href="#entra">6. Entra ID (Azure AD)</a>
+  <a href="#rbac">7. RBAC & Roles</a>
+  <a href="#sso">8. SSO (Single Sign-On)</a>
+  <a href="#scim">9. SCIM Provisioning</a>
+  <a href="#conditional">10. Conditional Access & MFA</a>
+  <a href="#pim">11. PIM & Governance</a>
+
+  <div class="grp">Cost, Security, Ops</div>
+  <a href="#cost">12. Cost Management & Billing</a>
+  <a href="#monitor">13. Monitoring & Alerts</a>
+  <a href="#security">14. Security & Key Vault</a>
+  <a href="#networking">15. Networking Basics</a>
+
+  <div class="grp">Data Engineering</div>
+  <a href="#datalanding">16. Data Services Map</a>
+  <a href="#storage">17. Storage & ADLS</a>
+  <a href="#sql">18. Azure SQL & Databases</a>
+  <a href="#synapse">19. Synapse / Fabric</a>
+  <a href="#adf">20. Data Factory (ETL)</a>
+  <a href="#databricks">21. Databricks</a>
+
+  <div class="grp">Migration & Connectivity</div>
+  <a href="#migration">22. Data Migration</a>
+  <a href="#snowflake">23. Snowflake Connectivity</a>
+  <a href="#powerbi">24. Power BI Connectivity</a>
+
+  <div class="grp">Practice</div>
+  <a href="#cli">25. CLI, PowerShell, ARM</a>
+  <a href="#explore">26. Your Trial Lab Plan</a>
+  <a href="#glossary">27. Glossary</a>
+</nav>
+
+<!-- ============ MAIN ============ -->
+<main>
+
+<header class="hero">
+  <h1>Azure Portal Fundamentals</h1>
+  <p>Everything you need to confidently explore your Azure trial account — from admin and identity, to data engineering, migration, and connecting Snowflake &amp; Power BI. Written in plain English with diagrams.</p>
+  <div class="hero-tags">
+    <span>👤 Admin</span><span>🔐 SSO &amp; SCIM</span><span>🛢️ Data Engineering</span>
+    <span>🔄 Migration</span><span>❄️ Snowflake</span><span>📊 Power BI</span><span>💰 Cost</span>
+  </div>
+</header>
+
+<div class="card">
+  <p class="lead">👋 <b>How to use this guide.</b> Read top to bottom the first time — each section builds on the last. The left menu lets you jump around later. Throughout you'll see:</p>
+  <p><span class="note" style="display:inline-block">💡 <b>Notes</b> = important facts</span>
+     <span class="tip" style="display:inline-block">✅ <b>Tips</b> = do this</span>
+     <span class="warn" style="display:inline-block">⚠️ <b>Warnings</b> = avoid this (especially cost!)</span></p>
+  <h4>Quick Map of Everything</h4>
+  <div class="toc">
+    <a href="#tour"><b>🖥️ Portal Tour</b><span>Learn the buttons, search, dashboard</span></a>
+    <a href="#hierarchy"><b>🏛️ Hierarchy</b><span>Tenant → Subscription → RG → Resource</span></a>
+    <a href="#entra"><b>🆔 Entra ID</b><span>Users, groups, the identity brain</span></a>
+    <a href="#rbac"><b>🛡️ RBAC</b><span>Who can do what, where</span></a>
+    <a href="#sso"><b>🔑 SSO &amp; SCIM</b><span>Connect apps & auto-create users</span></a>
+    <a href="#datalanding"><b>🛢️ Data Services</b><span>Storage, SQL, Synapse, ADF, Databricks</span></a>
+    <a href="#migration"><b>🔄 Migration</b><span>Move data into Azure</span></a>
+    <a href="#snowflake"><b>❄️ Snowflake + 📊 Power BI</b><span>Connectivity patterns</span></a>
+  </div>
+</div>
+
+<!-- ================= 1 ================= -->
+<section id="what">
+<h2><span class="ic">☁️</span> 1. What is Azure & the Azure Portal?</h2>
+<div class="card">
+<p><b>Microsoft Azure</b> is a <b>cloud platform</b> — a giant network of Microsoft data centers around the world. Instead of buying physical servers, you "rent" computing power, storage, and databases on demand and pay only for what you use.</p>
+
+<h3>Cloud, explained simply</h3>
+<div class="diagram">
+  <div class="flow">
+    <div class="box a">🏢 Old way<br><small>Buy servers,<br>maintain them</small></div>
+    <div class="arrow">➜</div>
+    <div class="box g">☁️ Cloud way<br><small>Rent on demand,<br>Microsoft maintains</small></div>
+  </div>
+  <div class="cap">You stop worrying about hardware and focus on building.</div>
+</div>
+
+<p>The <b>Azure Portal</b> (<span class="path">https://portal.azure.com</span>) is the <b>website / control panel</b> where you click buttons to create and manage everything. There are other ways to control Azure (CLI, code), but the portal is the visual, beginner-friendly one.</p>
+
+<table>
+<tr><th>Term</th><th>Plain meaning</th></tr>
+<tr><td>Azure Portal</td><td>The web dashboard you log into to manage Azure</td></tr>
+<tr><td>Resource</td><td>Any single thing you create (a database, a storage account, a VM)</td></tr>
+<tr><td>Service</td><td>A category/product of resources (e.g. "Azure SQL", "Storage")</td></tr>
+<tr><td>Subscription</td><td>The "billing folder" — where charges land</td></tr>
+<tr><td>Tenant / Entra ID</td><td>Your organization's identity directory (users & logins)</td></tr>
+</table>
+
+<div class="tip"><b>✅ Your trial</b> The free trial usually gives you ~$200 credit for 30 days plus several "always free" services. Watch the credit meter in <b>Cost Management</b> (Section 12) so you don't get surprised.</div>
+</div>
+</section>
+
+<!-- ================= 2 ================= -->
+<section id="tour">
+<h2><span class="ic">🖥️</span> 2. Portal Tour — Understanding the Screen</h2>
+<div class="card">
+<p>Let's name every part of the portal so the rest of the guide makes sense.</p>
+
+<div class="diagram">
+<div class="anatomy">
+  <div class="col"><h5>① Top Bar</h5>Global <b>search box</b> (most useful thing!), Cloud Shell <span class="kbd">&gt;_</span>, notifications 🔔, settings ⚙️, and your account/directory switcher.</div>
+  <div class="col"><h5>② Portal Menu (☰)</h5>Left hamburger menu: <b>+ Create a resource</b>, Home, Dashboard, All resources, All services.</div>
+  <div class="col"><h5>③ Blade / Working Area</h5>The center panel for whatever you opened. Azure calls each panel a <b>"blade."</b> Blades open side-by-side.</div>
+  <div class="col"><h5>④ Resource Menu</h5>Inside a resource, the left list: Overview, Activity log, Access control (IAM), Settings, etc.</div>
+</div>
+<div class="cap">The portal layout: top bar + left menu + blades. "Blade" = a sliding panel.</div>
+</div>
+
+<h3>The 6 things you'll click most</h3>
+<div class="grid">
+  <div class="mini"><div class="h"><span class="e">🔎</span>Global Search</div><p>Type any service or resource name. Faster than menus. Try "storage", "Entra", "cost".</p></div>
+  <div class="mini"><div class="h"><span class="e">➕</span>Create a resource</div><p>The "+" to spin up anything. Opens the Marketplace.</p></div>
+  <div class="mini"><div class="h"><span class="e">🏠</span>Home & Dashboard</div><p>Home = recent items. Dashboard = customizable tiles you pin.</p></div>
+  <div class="mini"><div class="h"><span class="e">📋</span>All resources</div><p>Flat list of everything you've created. Filter by type/RG.</p></div>
+  <div class="mini"><div class="h"><span class="e">&gt;_</span>Cloud Shell</div><p>A terminal in your browser (Bash or PowerShell) — no install.</p></div>
+  <div class="mini"><div class="h"><span class="e">🔀</span>Directory + Subscription</div><p>Top-right switcher. Critical when you have more than one.</p></div>
+</div>
+
+<div class="tip"><b>✅ Pro habit</b> Pin resources you use often to your <b>Dashboard</b> (the 📌 icon). And use the <b>search box</b> for almost everything — it's the single biggest time saver.</div>
+<div class="note"><b>💡 "Blade" jargon</b> When docs say "open the blade," they mean "open that panel." When they say "in the resource menu," they mean the left list inside an open resource.</div>
+</div>
+</section>
+
+<!-- ================= 3 ================= -->
+<section id="hierarchy">
+<h2><span class="ic">🏛️</span> 3. The Azure Hierarchy (the mental model)</h2>
+<div class="card">
+<p>This is <b>the single most important concept.</b> Everything in Azure lives inside a nested structure. Understand this and the whole portal clicks into place.</p>
+
+<div class="diagram">
+<div class="tree">
+  <div class="lvl"><div class="node n0">🏢 Tenant (Entra ID)</div><span class="desc">Your organization & all its users. One identity directory.</span></div>
+  <div class="lvl"><div class="node n1">🗂️ Management Group <small>(optional)</small></div><span class="desc">Groups many subscriptions for big orgs.</span></div>
+  <div class="lvl"><div class="node n1">💳 Subscription</div><span class="desc">The billing & quota boundary. Charges roll up here.</span></div>
+  <div class="lvl"><div class="node n2">📁 Resource Group</div><span class="desc">A folder that groups related resources for one project.</span></div>
+  <div class="lvl"><div class="node n3">🧱 Resource</div><span class="desc">The actual thing: a database, storage account, VM…</span></div>
+</div>
+<div class="legend">
+  <span><span class="dot" style="background:#5c2d91"></span>Identity</span>
+  <span><span class="dot" style="background:#0078d4"></span>Billing/Scope</span>
+  <span><span class="dot" style="background:#008272"></span>Organization</span>
+  <span><span class="dot" style="background:#ca5010"></span>The actual stuff</span>
+</div>
+<div class="cap">Top to bottom: from "who you are" down to "the thing you built."</div>
+</div>
+
+<table>
+<tr><th>Level</th><th>What it is</th><th>Real-world analogy</th></tr>
+<tr><td><b>Tenant (Entra ID)</b></td><td>Your company's identity directory — all users, groups, app logins</td><td>The company itself + employee badge system</td></tr>
+<tr><td><b>Management Group</b></td><td>Optional container to apply policy across many subscriptions</td><td>A regional HQ over many branches</td></tr>
+<tr><td><b>Subscription</b></td><td>Where billing happens and limits are set</td><td>A company credit card / department budget</td></tr>
+<tr><td><b>Resource Group</b></td><td>A folder for resources that live & die together</td><td>A project folder on your desktop</td></tr>
+<tr><td><b>Resource</b></td><td>One single created object</td><td>One file in that folder</td></tr>
+</table>
+
+<div class="key"><b>🔑 Why it matters</b> Permissions (RBAC), policies, and budgets can be applied at <i>any</i> level and they <b>flow downward (inherit)</b>. Give someone access at the Subscription and they get it on every resource inside.</div>
+</div>
+</section>
+
+<!-- ================= 4 ================= -->
+<section id="resources">
+<h2><span class="ic">📁</span> 4. Resources & Resource Groups</h2>
+<div class="card">
+<p>A <b>resource group (RG)</b> is just a folder. But choosing a good folder strategy keeps your account tidy and makes cleanup (and cost tracking) easy.</p>
+
+<h3>Good resource group habits</h3>
+<ul>
+  <li><b>Group by lifecycle/project</b> — put everything for one project in one RG so you can delete the whole RG when done (great for trials!).</li>
+  <li><b>One region per RG</b> is common but not required. The RG itself has a region (it stores metadata).</li>
+  <li><b>Naming convention</b> — e.g. <code>rg-dataeng-dev-eastus</code>. Consistency helps a lot.</li>
+  <li><b>Tags</b> — key/value labels like <code>env=dev</code>, <code>owner=roshan</code>, <code>project=learning</code> for filtering &amp; cost reports.</li>
+</ul>
+
+<div class="diagram">
+  <div class="flow">
+    <div class="box">📁 rg-learning-dev</div>
+    <div class="arrow dn" style="transform:none">⤵</div>
+  </div>
+  <div class="flow" style="margin-top:8px">
+    <div class="box g">🗄️ Storage</div>
+    <div class="box t">🛢️ SQL DB</div>
+    <div class="box p">🏭 Data Factory</div>
+    <div class="box a">🔐 Key Vault</div>
+  </div>
+  <div class="cap">One project folder holding all related resources. Delete the folder → all of it goes (and billing stops).</div>
+</div>
+
+<div class="warn"><b>⚠️ Cost safety on a trial</b> When you finish an experiment, <b>delete the entire resource group</b>. This is the cleanest way to stop charges and avoid forgotten resources eating your credit.</div>
+
+<h4>Creating a resource — the universal flow</h4>
+<ol class="steps">
+  <li>Click <b>+ Create a resource</b> (or search the service name).</li>
+  <li>Pick the <b>Subscription</b> and <b>Resource group</b> (create a new one if needed).</li>
+  <li>Choose a <b>Name</b>, <b>Region</b>, and a <b>tier/SKU</b> (size = price).</li>
+  <li>Step through tabs: Networking, Security, Tags…</li>
+  <li><b>Review + Create</b> → Azure validates → <b>Create</b>. A "deployment" runs.</li>
+</ol>
+</div>
+</section>
+
+<!-- ================= 5 ================= -->
+<section id="regions">
+<h2><span class="ic">🌍</span> 5. Regions & Availability</h2>
+<div class="card">
+<p>A <b>region</b> is a geographic location of Azure data centers (e.g. <i>East US</i>, <i>Central India</i>, <i>West Europe</i>). You pick a region for almost every resource.</p>
+
+<div class="grid">
+  <div class="mini"><div class="h"><span class="e">📍</span>Region</div><p>A set of data centers in one area. Pick one close to your users for speed.</p></div>
+  <div class="mini"><div class="h"><span class="e">🏢</span>Availability Zone</div><p>Physically separate buildings within a region for resilience.</p></div>
+  <div class="mini"><div class="h"><span class="e">🌐</span>Geography</div><p>A group of regions tied to data-residency rules (e.g. EU, India).</p></div>
+  <div class="mini"><div class="h"><span class="e">🔁</span>Region Pair</div><p>Two regions linked for backup/disaster recovery.</p></div>
+</div>
+
+<div class="note"><b>💡 How to choose</b> ① closeness to users (lower latency), ② data-residency/legal rules, ③ which services are available there, ④ price (regions differ a little).</div>
+<div class="tip"><b>✅ Keep things together</b> Put resources that talk to each other (e.g. Data Factory + Storage + SQL) in the <b>same region</b> to reduce latency and avoid cross-region data-transfer fees.</div>
+</div>
+</section>
+
+<!-- ================= 6 ================= -->
+<section id="entra">
+<h2><span class="ic">🆔</span> 6. Microsoft Entra ID (formerly Azure AD)</h2>
+<div class="card">
+<p><b>Microsoft Entra ID</b> is Azure's <b>identity service</b> — the brain that knows <i>who</i> everyone is and lets them sign in. (It was renamed from "Azure Active Directory" / Azure AD in 2023; you'll still see "Azure AD" everywhere.)</p>
+
+<div class="diagram">
+  <div class="flow">
+    <div class="box p">👤 User</div><div class="arrow">➜</div>
+    <div class="box">🆔 Entra ID<br><small>checks identity</small></div><div class="arrow">➜</div>
+    <div class="box g">✅ Access to apps<br>&amp; Azure</div>
+  </div>
+  <div class="cap">Entra ID is the front door. It authenticates (proves who you are) before anything else.</div>
+</div>
+
+<h3>Core building blocks</h3>
+<table>
+<tr><th>Object</th><th>What it is</th><th>Where in portal</th></tr>
+<tr><td><b>User</b></td><td>A person who can sign in (member or external "guest")</td><td>Entra ID → Users</td></tr>
+<tr><td><b>Group</b></td><td>A bundle of users — assign access to the group, not each person</td><td>Entra ID → Groups</td></tr>
+<tr><td><b>App registration</b></td><td>An identity for your <i>own</i> app/code to call Azure APIs</td><td>Entra ID → App registrations</td></tr>
+<tr><td><b>Enterprise application</b></td><td>A 3rd-party SaaS app (Snowflake, Power BI, Salesforce) you connect for SSO/SCIM</td><td>Entra ID → Enterprise applications</td></tr>
+<tr><td><b>Service principal</b></td><td>A "robot account" an app uses to authenticate (non-human)</td><td>Auto-created with apps</td></tr>
+<tr><td><b>Managed identity</b></td><td>An automatic, password-free identity for an Azure resource</td><td>On each resource → Identity</td></tr>
+</table>
+
+<div class="key"><b>🔑 Two words to never confuse</b><br>
+<b>Authentication (AuthN)</b> = "Who are you?" (login) — handled by Entra ID.<br>
+<b>Authorization (AuthZ)</b> = "What are you allowed to do?" — handled by RBAC (next section).</div>
+
+<h4>Admin roles inside Entra ID</h4>
+<p>Entra has its own roles (separate from Azure RBAC) for <i>directory</i> tasks:</p>
+<div>
+  <span class="pill">Global Administrator</span>
+  <span class="pill">User Administrator</span>
+  <span class="pill">Application Administrator</span>
+  <span class="pill">Groups Administrator</span>
+  <span class="pill">Billing Administrator</span>
+  <span class="pill">Helpdesk Administrator</span>
+</div>
+<div class="warn"><b>⚠️ Global Administrator</b> is the most powerful role — it can do anything in your tenant. Use it sparingly, protect it with MFA, and have a backup "break-glass" account.</div>
+
+<h3>📦 Entra ID licence tiers: Free, P1 &amp; P2 (the terms you keep seeing)</h3>
+<p>Entra ID comes in <b>tiers</b> (paid plans). The basic identity service is <b>Free</b>, but the advanced security &amp; governance features cost extra — sold as <b>Entra ID P1</b> and <b>P2</b> (these are the licences bundled inside Microsoft 365 E3 and E5 respectively). When a doc says <i>"requires Entra ID P1,"</i> it means <i>"this feature is off unless you've bought that plan."</i></p>
+
+<div class="key"><b>🏨 Simple analogy: hotel room tiers</b>
+<b>Free</b> = a standard room (a bed — you can sleep = users can sign in). <b>P1</b> = an upgraded room with extras (gym + breakfast = Conditional Access, SSO at scale, self-service password reset). <b>P2</b> = the full suite — everything in P1 <i>plus</i> the concierge that watches for trouble (risk detection, PIM just-in-time admin, access reviews). Each tier <b>includes everything below it</b>.</div>
+
+<table>
+<tr><th>Capability</th><th>Free</th><th>P1</th><th>P2</th></tr>
+<tr><td>Sign-in, users &amp; groups, basic SSO</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td>Security Defaults (basic MFA on/off for everyone)</td><td>✅</td><td>✅</td><td>✅</td></tr>
+<tr><td><b>Conditional Access</b> (rules like "MFA only from outside the office")</td><td>❌</td><td>✅</td><td>✅</td></tr>
+<tr><td>Self-service password reset (with write-back)</td><td>❌</td><td>✅</td><td>✅</td></tr>
+<tr><td>Group-based app assignment, advanced SSO/SCIM at scale</td><td>❌</td><td>✅</td><td>✅</td></tr>
+<tr><td><b>Identity Protection</b> (risk-based sign-in detection)</td><td>❌</td><td>❌</td><td>✅</td></tr>
+<tr><td><b>PIM</b> — Privileged Identity Management (just-in-time admin roles)</td><td>❌</td><td>❌</td><td>✅</td></tr>
+<tr><td><b>Access Reviews</b> (periodic "do they still need this?" audits)</td><td>❌</td><td>❌</td><td>✅</td></tr>
+</table>
+
+<div class="diagram">
+  <div class="flow">
+    <div class="box">🆓 Free<br><small>sign in,<br>basic MFA</small></div><div class="arrow">➜</div>
+    <div class="box a">⭐ P1<br><small>+ Conditional Access,<br>SSPR, advanced SSO</small></div><div class="arrow">➜</div>
+    <div class="box p">⭐⭐ P2<br><small>+ Identity Protection,<br>PIM, Access Reviews</small></div>
+  </div>
+  <div class="cap">Each tier is a superset of the one before it. P2 = P1 + risk &amp; governance features.</div>
+</div>
+
+<div class="note"><b>💡 Where you'll see these mentioned in this guide</b>
+<b>Conditional Access &amp; MFA</b> (§10) needs <b>P1+</b>. <b>PIM &amp; Governance</b> (§11) needs <b>P2</b>. Plain <b>SSO/SCIM</b> (§8–9) work on Free for basics but use P1 features at scale.</div>
+
+<div class="tip"><b>✅ On a trial / free account</b> You get the <b>Free</b> tier, plus most setups include a <b>30-day P2 trial</b> you can activate (<span class="path">Entra ID → overview → "Try Entra Suite / P2"</span>) to test Conditional Access and PIM. After it expires those features stop working unless you buy the licence — so don't build a production dependency on them during a trial without planning the cost.</div>
+</div>
+</section>
+
+<!-- ================= 7 ================= -->
+<section id="rbac">
+<h2><span class="ic">🛡️</span> 7. RBAC — Role-Based Access Control</h2>
+<div class="card">
+<p><b>RBAC</b> answers "what can this person/app <i>do</i>, and <i>where</i>?" You grant access by combining three things:</p>
+
+<div class="diagram">
+  <div class="flow">
+    <div class="box p">WHO<br><small>user / group /<br>service principal</small></div>
+    <div class="arrow">+</div>
+    <div class="box">WHAT<br><small>Role definition<br>(e.g. Contributor)</small></div>
+    <div class="arrow">+</div>
+    <div class="box t">WHERE<br><small>Scope: sub / RG /<br>resource</small></div>
+    <div class="arrow">=</div>
+    <div class="box g">Role<br>Assignment ✅</div>
+  </div>
+  <div class="cap">Who + What + Where = one role assignment. Made under "Access control (IAM)".</div>
+</div>
+
+<h3>The roles you'll use 90% of the time</h3>
+<table>
+<tr><th>Role</th><th>Can do</th><th>Use for</th></tr>
+<tr><td><b>Owner</b></td><td>Everything, <i>including</i> granting access to others</td><td>You, the account owner</td></tr>
+<tr><td><b>Contributor</b></td><td>Create/manage resources, but <i>can't</i> grant access</td><td>Engineers building stuff</td></tr>
+<tr><td><b>Reader</b></td><td>View only, no changes</td><td>Auditors, stakeholders</td></tr>
+<tr><td><b>User Access Administrator</b></td><td>Manage others' access only</td><td>Access managers</td></tr>
+<tr><td colspan="3" style="background:#f4eefb"><b>Data-plane roles</b> (act on data <i>inside</i> a resource, not the resource itself):</td></tr>
+<tr><td>Storage Blob Data Contributor</td><td>Read/write files in a storage account</td><td>Data engineers reading/writing blobs</td></tr>
+<tr><td>SQL DB Contributor</td><td>Manage SQL databases</td><td>DBAs</td></tr>
+<tr><td>Key Vault Secrets User</td><td>Read secrets from Key Vault</td><td>Apps fetching passwords</td></tr>
+</table>
+
+<div class="key"><b>🔑 Control plane vs Data plane</b><br>
+<b>Control plane</b> = managing the <i>box</i> (create/delete a storage account).<br>
+<b>Data plane</b> = touching what's <i>inside</i> (read the actual files). <i>You often need separate roles for each!</i> A classic gotcha: you're "Owner" but still can't read blobs until you also get "Storage Blob Data Reader."</div>
+
+<h4>How to assign a role (the IAM flow)</h4>
+<ol class="steps">
+  <li>Open the scope (a subscription, RG, or resource).</li>
+  <li>Click <b>Access control (IAM)</b> in the left menu.</li>
+  <li><b>+ Add → Add role assignment</b>.</li>
+  <li>Pick the <b>Role</b> → choose <b>members</b> (user/group/identity) → <b>Review + assign</b>.</li>
+</ol>
+<div class="tip"><b>✅ Best practice</b> Assign roles to <b>groups</b>, not individuals. Grant the <b>least privilege</b> needed, at the <b>narrowest scope</b> that works.</div>
+</div>
+</section>
+
+<!-- ================= 8 ================= -->
+<section id="sso">
+<h2><span class="ic">🔑</span> 8. SSO — Single Sign-On</h2>
+<div class="card">
+<p><b>Single Sign-On (SSO)</b> lets users log in <b>once</b> with their company account and then access many apps (Snowflake, Power BI, Salesforce, Tableau…) <b>without typing more passwords</b>. Entra ID becomes the central "identity provider."</p>
+
+<div class="diagram">
+  <div class="flow">
+    <div class="box p">👤 User logs in once<br><small>to Entra ID</small></div>
+    <div class="arrow">➜</div>
+    <div class="box">🎫 Gets a token</div>
+  </div>
+  <div class="flow" style="margin-top:10px">
+    <div class="box g">❄️ Snowflake</div>
+    <div class="box g">📊 Power BI</div>
+    <div class="box g">☁️ Salesforce</div>
+    <div class="box g">📈 Tableau</div>
+  </div>
+  <div class="cap">One login → token → access to all connected apps. No separate passwords per app.</div>
+</div>
+
+<h3>Key SSO vocabulary</h3>
+<table>
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td><b>IdP (Identity Provider)</b></td><td>The system that verifies identity = <b>Entra ID</b> in your case</td></tr>
+<tr><td><b>SP (Service Provider)</b></td><td>The app you're logging into (Snowflake, etc.)</td></tr>
+<tr><td><b>SAML 2.0</b></td><td>An older but very common SSO protocol (XML-based). Used by Snowflake, many SaaS.</td></tr>
+<tr><td><b>OIDC / OAuth 2.0</b></td><td>Modern token-based protocols (JSON). Used by Power BI & most new apps.</td></tr>
+<tr><td><b>Metadata / Federation</b></td><td>The config file/URLs the two sides exchange to trust each other</td></tr>
+<tr><td><b>Claims / Attributes</b></td><td>Info in the token (email, name, groups) sent to the app</td></tr>
+</table>
+
+<h3>Setting up SSO for an app — general steps</h3>
+<ol class="steps">
+  <li>Go to <span class="path">Entra ID → Enterprise applications → + New application</span>.</li>
+  <li>Search the gallery (e.g. "Snowflake") or add a custom/non-gallery app.</li>
+  <li>Open the app → <b>Single sign-on</b> → choose <b>SAML</b> (or OIDC).</li>
+  <li>Fill the <b>Identifier (Entity ID)</b> and <b>Reply URL (ACS URL)</b> from the target app.</li>
+  <li>Configure <b>attributes & claims</b> (which user info to send).</li>
+  <li>Download Entra's <b>Federation Metadata XML</b> / certificate and paste into the app.</li>
+  <li><b>Assign users/groups</b> who are allowed to use it, then <b>Test</b>.</li>
+</ol>
+
+<div class="note"><b>💡 SSO ≠ provisioning</b> SSO controls <i>logging in</i>. It does <b>not</b> create the user account inside the app. Creating/updating/deleting accounts automatically is <b>SCIM provisioning</b> — the next section. They're usually set up together.</div>
+</div>
+</section>
+
+<!-- ================= 9 ================= -->
+<section id="scim">
+<h2><span class="ic">🔄</span> 9. SCIM Provisioning</h2>
+<div class="card">
+<p><b>SCIM</b> (System for Cross-domain Identity Management) is the standard that lets Entra ID <b>automatically create, update, and deactivate user accounts</b> inside other apps. It keeps everything in sync — no manual account creation.</p>
+
+<div class="diagram">
+  <div class="flow">
+    <div class="box">🆔 Entra ID<br><small>source of truth</small></div>
+    <div class="arrow">➜ SCIM ➜</div>
+    <div class="box g">🎯 Target app<br><small>Snowflake, etc.</small></div>
+  </div>
+  <div class="cap">A new hire added in Entra → account auto-appears in the app. Someone leaves → account auto-disabled.</div>
+</div>
+
+<h3>What SCIM keeps in sync</h3>
+<div class="grid">
+  <div class="mini"><div class="h"><span class="e">➕</span>Create</div><p>New user in Entra → account auto-created in the app.</p></div>
+  <div class="mini"><div class="h"><span class="e">✏️</span>Update</div><p>Name/email/role changes flow through automatically.</p></div>
+  <div class="mini"><div class="h"><span class="e">➖</span>Deprovision</div><p>User removed/disabled in Entra → access revoked in the app.</p></div>
+  <div class="mini"><div class="h"><span class="e">👥</span>Group sync</div><p>Group membership can map to roles in the target app.</p></div>
+</div>
+
+<h3>Setting up SCIM — general steps</h3>
+<ol class="steps">
+  <li>In the <b>Enterprise application</b> → open <b>Provisioning</b>.</li>
+  <li>Set <b>Provisioning Mode = Automatic</b>.</li>
+  <li>Enter the app's <b>Tenant URL</b> (SCIM endpoint) and a <b>Secret Token</b> (from the target app).</li>
+  <li>Click <b>Test Connection</b> to confirm Entra can reach it.</li>
+  <li>Configure <b>attribute mappings</b> (which Entra fields map to which app fields).</li>
+  <li>Set <b>Scope</b> = "assigned users and groups only" → <b>Save</b> → turn <b>Provisioning ON</b>.</li>
+</ol>
+
+<table>
+<tr><th>SSO vs SCIM — don't mix them up</th><th>SSO</th><th>SCIM</th></tr>
+<tr><td>Purpose</td><td>Let users <b>log in</b></td><td><b>Manage accounts</b> (create/update/remove)</td></tr>
+<tr><td>When it runs</td><td>At login time</td><td>Continuously, in the background</td></tr>
+<tr><td>Protocol</td><td>SAML / OIDC</td><td>SCIM 2.0 (REST/JSON)</td></tr>
+</table>
+<div class="tip"><b>✅ Best practice</b> Configure SSO + SCIM <b>together</b> for any business app. SSO = the door; SCIM = issuing & revoking the keys automatically.</div>
+</div>
+</section>
+
+<!-- ================= 10 ================= -->
+<section id="conditional">
+<h2><span class="ic">🚦</span> 10. Conditional Access & MFA</h2>
+<div class="card">
+<p><b>Multi-Factor Authentication (MFA)</b> requires a second proof of identity (phone app, code) beyond a password. <b>Conditional Access</b> is the rules engine that decides <i>when</i> to demand MFA or block access.</p>
+
+<div class="diagram">
+  <div class="flow">
+    <div class="box p">👤 Sign-in attempt</div>
+    <div class="arrow">➜</div>
+    <div class="box">🚦 Conditional Access<br><small>evaluates signals</small></div>
+    <div class="arrow">➜</div>
+    <div class="box g">✅ Allow</div>
+  </div>
+  <div class="flow" style="margin-top:8px;gap:14px">
+    <div class="box a" style="min-width:auto">🔐 Require MFA</div>
+    <div class="box a" style="min-width:auto">📍 Block risky location</div>
+    <div class="box a" style="min-width:auto">💻 Require managed device</div>
+  </div>
+  <div class="cap">"IF [user/location/device/risk] THEN [allow / require MFA / block]."</div>
+</div>
+
+<p>A Conditional Access policy is an <b>IF → THEN</b> rule:</p>
+<ul>
+  <li><b>Assignments (the IF):</b> which users, which apps, conditions (location, device, sign-in risk).</li>
+  <li><b>Access controls (the THEN):</b> Grant with MFA, block, require compliant device, etc.</li>
+</ul>
+<div class="path">Entra ID → Security → Conditional Access → + New policy</div>
+<div class="tip"><b>✅ Easy win</b> Turn on <b>Security Defaults</b> (or a CA policy) to require MFA for admins. It's the single biggest security improvement you can make.</div>
+<div class="note"><b>💡 Licensing</b> Full Conditional Access needs Entra ID P1/P2. Basic <b>Security Defaults</b> are free and cover the essentials for a trial.</div>
+</div>
+</section>
+
+<!-- ================= 11 ================= -->
+<section id="pim">
+<h2><span class="ic">⏱️</span> 11. PIM & Governance</h2>
+<div class="card">
+<p>As you grow, you'll want guardrails. These admin/governance features keep things secure and compliant.</p>
+<table>
+<tr><th>Feature</th><th>What it does</th></tr>
+<tr><td><b>PIM (Privileged Identity Management)</b></td><td><b>Just-in-time</b> admin: roles are dormant until a user "activates" them for a few hours, with approval &amp; audit. No standing admin access.</td></tr>
+<tr><td><b>Azure Policy</b></td><td>Rules that enforce standards — e.g. "only allow resources in East US", "require a tag", "deny public storage."</td></tr>
+<tr><td><b>Blueprints / Landing Zones</b></td><td>Repeatable templates of policies + RBAC + resources for new environments.</td></tr>
+<tr><td><b>Access Reviews</b></td><td>Periodic "does this person still need access?" campaigns.</td></tr>
+<tr><td><b>Locks</b></td><td>Put a <b>CanNotDelete</b> or <b>ReadOnly</b> lock on critical resources to prevent accidents.</td></tr>
+<tr><td><b>Activity Log</b></td><td>Audit trail of every control-plane action (who created/deleted what, when).</td></tr>
+</table>
+<div class="tip"><b>✅ On your trial</b> Try creating one simple Azure Policy ("require a tag on resource groups") to see governance in action — it's free.</div>
+</div>
+</section>
+
+<!-- ================= 12 ================= -->
+<section id="cost">
+<h2><span class="ic">💰</span> 12. Cost Management & Billing</h2>
+<div class="card">
+<p>The #1 thing to master on a trial so you don't burn your credit. Search <b>"Cost Management"</b> in the top bar.</p>
+
+<div class="grid">
+  <div class="mini"><div class="h"><span class="e">📊</span>Cost analysis</div><p>See spend by day, service, resource group, or tag. Your main dashboard.</p></div>
+  <div class="mini"><div class="h"><span class="e">🔔</span>Budgets</div><p>Set a $ limit and get emailed at 50/80/100%. <b>Do this first!</b></p></div>
+  <div class="mini"><div class="h"><span class="e">💡</span>Advisor</div><p>Recommends savings (idle resources, right-sizing).</p></div>
+  <div class="mini"><div class="h"><span class="e">🧾</span>Invoices</div><p>Billing → see charges and credit remaining.</p></div>
+</div>
+
+<h3>Why things cost money (and how to avoid surprises)</h3>
+<table>
+<tr><th>You pay for…</th><th>Example</th><th>Trial tip</th></tr>
+<tr><td><b>Compute time</b></td><td>A VM or running cluster — billed per second/hour even if idle</td><td><b>Stop/deallocate</b> VMs &amp; clusters when not in use</td></tr>
+<tr><td><b>Storage</b></td><td>GB stored per month</td><td>Small; delete test data when done</td></tr>
+<tr><td><b>Data egress</b></td><td>Data leaving Azure / crossing regions</td><td>Keep resources in one region</td></tr>
+<tr><td><b>Provisioned capacity</b></td><td>Synapse dedicated pool, reserved DB — billed while it exists</td><td>Use serverless/pause; delete after labs</td></tr>
+</table>
+
+<div class="warn"><b>⚠️ Biggest trial money traps</b> ① a left-running VM or Databricks cluster, ② a <b>Synapse dedicated SQL pool</b> (pause it!), ③ public IPs/gateways. <b>Always delete the resource group when finished.</b></div>
+<div class="tip"><b>✅ First task in your trial:</b> create a <b>Budget</b> of e.g. $50 with alerts. 2 minutes of setup saves a lot of worry.</div>
+</div>
+</section>
+
+<!-- ================= 13 ================= -->
+<section id="monitor">
+<h2><span class="ic">📈</span> 13. Monitoring & Alerts</h2>
+<div class="card">
+<p><b>Azure Monitor</b> is the umbrella for observing everything — performance, logs, health, and alerts.</p>
+<table>
+<tr><th>Tool</th><th>What it's for</th></tr>
+<tr><td><b>Metrics</b></td><td>Numeric performance data over time (CPU %, DB DTU, request count) — charts</td></tr>
+<tr><td><b>Log Analytics</b></td><td>Central log store; query with <b>KQL</b> (Kusto Query Language)</td></tr>
+<tr><td><b>Alerts</b></td><td>Fire an action when a condition is met (e.g. CPU &gt; 80%)</td></tr>
+<tr><td><b>Action Groups</b></td><td>What an alert does: email, SMS, webhook, run automation</td></tr>
+<tr><td><b>Application Insights</b></td><td>Deep monitoring for your apps (requests, failures, traces)</td></tr>
+<tr><td><b>Activity Log</b></td><td>Audit of admin actions (who did what)</td></tr>
+<tr><td><b>Service Health</b></td><td>Azure outages &amp; planned maintenance affecting you</td></tr>
+</table>
+<div class="note"><b>💡 KQL</b> is a friendly, SQL-like query language. Data engineers use it a lot. Example: <code>requests | where timestamp &gt; ago(1h) | summarize count() by resultCode</code></div>
+</div>
+</section>
+
+<!-- ================= 14 ================= -->
+<section id="security">
+<h2><span class="ic">🔐</span> 14. Security & Key Vault</h2>
+<div class="card">
+<p>Security is layered. Here are the must-know pieces.</p>
+<div class="grid">
+  <div class="mini"><div class="h"><span class="e">🗝️</span>Key Vault</div><p>Secure store for <b>secrets</b> (passwords/connection strings), <b>keys</b> (encryption), and <b>certificates</b>. Apps fetch secrets instead of hardcoding them.</p></div>
+  <div class="mini"><div class="h"><span class="e">🛡️</span>Defender for Cloud</div><p>Security posture score + recommendations + threat alerts across resources.</p></div>
+  <div class="mini"><div class="h"><span class="e">🤖</span>Managed Identity</div><p>Password-free identity for a resource so it can access Key Vault/Storage securely — <b>no secrets to manage</b>.</p></div>
+  <div class="mini"><div class="h"><span class="e">🌐</span>Private Endpoint</div><p>Give a service a private IP inside your network so traffic never touches the public internet.</p></div>
+  <div class="mini"><div class="h"><span class="e">🔒</span>Encryption</div><p>Data is encrypted at rest &amp; in transit by default. You can bring your own keys.</p></div>
+  <div class="mini"><div class="h"><span class="e">🚪</span>Firewall rules</div><p>Restrict which IPs/networks can reach a database or storage account.</p></div>
+</div>
+<div class="key"><b>🔑 The golden pattern for data engineering</b><br>
+Resource gets a <b>Managed Identity</b> → that identity is given an <b>RBAC role</b> on Storage/Key Vault → it reads <b>secrets from Key Vault</b>. Result: <b>no passwords anywhere in your code.</b> You'll use this constantly with Data Factory, Databricks, and Synapse.</div>
+</div>
+</section>
+
+<!-- ================= 15 ================= -->
+<section id="networking">
+<h2><span class="ic">🌐</span> 15. Networking Basics</h2>
+<div class="card">
+<p>You don't need to be a network engineer, but a few terms matter for connectivity (especially Snowflake/Power BI private links and on-prem migration).</p>
+<table>
+<tr><th>Term</th><th>Plain meaning</th></tr>
+<tr><td><b>Virtual Network (VNet)</b></td><td>Your private network in Azure — like your own LAN in the cloud</td></tr>
+<tr><td><b>Subnet</b></td><td>A slice of a VNet to organize/isolate resources</td></tr>
+<tr><td><b>NSG (Network Security Group)</b></td><td>Firewall rules controlling traffic in/out of subnets/NICs</td></tr>
+<tr><td><b>Private Endpoint / Private Link</b></td><td>Private, internet-free connection to a service (PaaS or partner like Snowflake)</td></tr>
+<tr><td><b>VPN Gateway</b></td><td>Encrypted tunnel from your office/on-prem to Azure over the internet</td></tr>
+<tr><td><b>ExpressRoute</b></td><td>A private, dedicated leased line to Azure (fast, not over public internet)</td></tr>
+<tr><td><b>Service Endpoint</b></td><td>Lets a VNet reach a PaaS service over the Azure backbone</td></tr>
+</table>
+<div class="note"><b>💡 For data work</b> Private Endpoints are how you securely connect tools like <b>Snowflake (via Azure Private Link)</b> and gateways so data never traverses the public internet.</div>
+</div>
+</section>
+
+<!-- ================= 16 ================= -->
+<section id="datalanding">
+<h2><span class="ic">🛢️</span> 16. Data Services Map (for Data Engineers)</h2>
+<div class="card">
+<p>Azure has many data products. Here's the mental map of <b>which tool does what</b> in a typical data pipeline.</p>
+
+<div class="diagram">
+  <div class="flow">
+    <div class="box a">📥 Ingest<br><small>Data Factory<br>Event Hubs</small></div>
+    <div class="arrow">➜</div>
+    <div class="box g">🗄️ Store<br><small>ADLS Gen2<br>Blob Storage</small></div>
+    <div class="arrow">➜</div>
+    <div class="box p">⚙️ Process<br><small>Databricks<br>Synapse Spark</small></div>
+    <div class="arrow">➜</div>
+    <div class="box t">🏢 Serve<br><small>Synapse SQL<br>Azure SQL / Fabric</small></div>
+    <div class="arrow">➜</div>
+    <div class="box">📊 Visualize<br><small>Power BI</small></div>
+  </div>
+  <div class="cap">The modern data pipeline: Ingest → Store → Process → Serve → Visualize.</div>
+</div>
+
+<h3>The services at a glance</h3>
+<table>
+<tr><th>Service</th><th>What it is</th><th>Use it for</th></tr>
+<tr><td><b>Azure Storage / ADLS Gen2</b></td><td>Cheap, massive file/object storage (the "data lake")</td><td>Landing raw &amp; processed data</td></tr>
+<tr><td><b>Azure SQL Database</b></td><td>Managed relational (OLTP) database (SQL Server engine)</td><td>App databases, structured data</td></tr>
+<tr><td><b>Azure Data Factory (ADF)</b></td><td>Cloud ETL/ELT &amp; orchestration (drag-and-drop pipelines)</td><td>Moving &amp; transforming data on a schedule</td></tr>
+<tr><td><b>Azure Synapse Analytics</b></td><td>Analytics warehouse + Spark + pipelines in one studio</td><td>Big-data analytics &amp; warehousing</td></tr>
+<tr><td><b>Microsoft Fabric</b></td><td>The newer all-in-one SaaS analytics platform (OneLake + Power BI)</td><td>End-to-end analytics, simpler</td></tr>
+<tr><td><b>Azure Databricks</b></td><td>Spark-based platform for big data &amp; ML (notebooks)</td><td>Heavy transformation, data science</td></tr>
+<tr><td><b>Cosmos DB</b></td><td>Global NoSQL database</td><td>High-scale apps, JSON/key-value</td></tr>
+<tr><td><b>Event Hubs / Stream Analytics</b></td><td>Real-time streaming ingestion &amp; processing</td><td>IoT, logs, live events</td></tr>
+<tr><td><b>Purview</b></td><td>Data governance &amp; catalog (find/classify data)</td><td>Lineage, compliance, discovery</td></tr>
+</table>
+<div class="note"><b>💡 Synapse vs Fabric</b> Both do warehousing/analytics. Synapse is the established PaaS; <b>Fabric</b> is Microsoft's newer SaaS direction that unifies storage (OneLake) + engines + Power BI. For learning, try Synapse first (more granular) then Fabric.</div>
+</div>
+</section>
+
+<!-- ================= 17 ================= -->
+<section id="storage">
+<h2><span class="ic">🗄️</span> 17. Storage Accounts & ADLS Gen2</h2>
+<div class="card">
+<p>The <b>storage account</b> is the foundation of nearly every data project. <b>ADLS Gen2</b> (Azure Data Lake Storage) is a storage account with the "hierarchical namespace" turned on, which makes it behave like a real folder-based file system — ideal for analytics.</p>
+
+<h3>The 4 storage services inside one account</h3>
+<div class="grid">
+  <div class="mini"><div class="h"><span class="e">📦</span>Blob / Containers</div><p>Object storage for any file (CSV, Parquet, images). The data lake lives here.</p></div>
+  <div class="mini"><div class="h"><span class="e">📁</span>Files</div><p>Managed network file shares (SMB/NFS).</p></div>
+  <div class="mini"><div class="h"><span class="e">📨</span>Queues</div><p>Simple message queue for app-to-app messaging.</p></div>
+  <div class="mini"><div class="h"><span class="e">🗂️</span>Tables</div><p>Cheap NoSQL key-value store.</p></div>
+</div>
+
+<h3>Things you'll configure</h3>
+<table>
+<tr><th>Setting</th><th>Meaning</th></tr>
+<tr><td><b>Performance: Standard / Premium</b></td><td>Standard = cheap HDD-backed; Premium = fast SSD for low latency</td></tr>
+<tr><td><b>Redundancy (LRS/ZRS/GRS)</b></td><td>How many copies &amp; where. LRS = 3 copies in one DC; GRS = copies in another region</td></tr>
+<tr><td><b>Access tier (Hot/Cool/Archive)</b></td><td>Hot = frequent access; Cool/Archive = cheaper for rarely-used data</td></tr>
+<tr><td><b>Hierarchical namespace</b></td><td>Turn ON = ADLS Gen2 (folders, fast analytics). Set at creation only!</td></tr>
+</table>
+
+<h4>How to access the data</h4>
+<ul>
+  <li><b>Portal</b> → Storage browser, or <b>Azure Storage Explorer</b> (desktop app).</li>
+  <li><b>RBAC roles</b> — give yourself <code>Storage Blob Data Contributor</code> to read/write files (remember: control vs data plane!).</li>
+  <li><b>SAS token</b> — a time-limited URL with specific permissions for sharing.</li>
+  <li><b>Access keys</b> — full-access master keys (avoid sharing; rotate regularly).</li>
+</ul>
+<div class="tip"><b>✅ For analytics</b> always create an <b>ADLS Gen2</b> (hierarchical namespace ON) and store data in <b>Parquet/Delta</b> format for speed and lower cost.</div>
+</div>
+</section>
+
+<!-- ================= 18 ================= -->
+<section id="sql">
+<h2><span class="ic">🛢️</span> 18. Azure SQL & Databases</h2>
+<div class="card">
+<p>Azure offers several relational database options. Know the difference so you pick the right one.</p>
+<table>
+<tr><th>Option</th><th>Best for</th><th>Notes</th></tr>
+<tr><td><b>Azure SQL Database</b></td><td>Most new cloud apps</td><td>Fully managed single DB; serverless option auto-pauses to save money</td></tr>
+<tr><td><b>SQL Managed Instance</b></td><td>Lift-and-shift from on-prem SQL Server</td><td>Near-100% SQL Server compatibility</td></tr>
+<tr><td><b>SQL Server on a VM</b></td><td>Full OS control / legacy needs</td><td>You manage patching &amp; backups (IaaS)</td></tr>
+<tr><td><b>PostgreSQL / MySQL / MariaDB</b></td><td>Open-source app stacks</td><td>Managed "Flexible Server" options</td></tr>
+</table>
+
+<h3>Key concepts when creating Azure SQL</h3>
+<ul>
+  <li><b>Logical server</b> — a container/endpoint (<code>yourname.database.windows.net</code>) that holds databases &amp; sets admin login + firewall.</li>
+  <li><b>Purchasing model</b> — <b>DTU</b> (simple bundled) or <b>vCore</b> (flexible, pick CPU/RAM). vCore + <b>serverless</b> is great for trials (auto-pause = pay near-zero when idle).</li>
+  <li><b>Firewall</b> — add your client IP, and tick "Allow Azure services" so other Azure resources can connect.</li>
+  <li><b>Authentication</b> — SQL login <i>and/or</i> <b>Entra ID</b> auth (preferred — central identity).</li>
+</ul>
+<div class="tip"><b>✅ Trial-friendly</b> Pick <b>vCore → Serverless</b> with auto-pause. You'll barely spend credit while learning. Use the built-in <b>Query editor</b> in the portal to run SQL without installing tools.</div>
+</div>
+</section>
+
+<!-- ================= 19 ================= -->
+<section id="synapse">
+<h2><span class="ic">🏢</span> 19. Synapse Analytics & Microsoft Fabric</h2>
+<div class="card">
+<p><b>Azure Synapse Analytics</b> is a unified analytics workspace combining a data warehouse, Spark, and pipelines. You work in <b>Synapse Studio</b> (a web app).</p>
+<table>
+<tr><th>Synapse engine</th><th>What it is</th><th>Cost note</th></tr>
+<tr><td><b>Serverless SQL pool</b></td><td>Query files in the data lake on-demand with T-SQL</td><td>Pay per TB scanned — cheap to start. <b>Use this for learning.</b></td></tr>
+<tr><td><b>Dedicated SQL pool</b></td><td>A provisioned MPP data warehouse</td><td>⚠️ Billed while it exists — <b>pause when idle!</b></td></tr>
+<tr><td><b>Apache Spark pool</b></td><td>Spark clusters for big-data &amp; notebooks</td><td>Billed while cluster runs; auto-pause available</td></tr>
+<tr><td><b>Pipelines</b></td><td>Same engine as Data Factory, built in</td><td>Pay per activity run</td></tr>
+</table>
+
+<h3>Microsoft Fabric (the newer path)</h3>
+<p><b>Fabric</b> is Microsoft's SaaS analytics platform that bundles everything — data engineering, warehouse, real-time, data science, and <b>Power BI</b> — on top of <b>OneLake</b> (one unified storage). It's billed by <b>capacity units (CUs)</b> and has its own portal (<span class="path">app.fabric.microsoft.com</span>).</p>
+<div class="diagram">
+  <div class="flow">
+    <div class="box t">🌊 OneLake<br><small>one storage</small></div>
+    <div class="arrow">➜</div>
+    <div class="box">Data Eng · Warehouse · Real-time · DS</div>
+    <div class="arrow">➜</div>
+    <div class="box g">📊 Power BI<br><small>built in</small></div>
+  </div>
+  <div class="cap">Fabric = everything in one SaaS product. Power BI is part of it.</div>
+</div>
+<div class="warn"><b>⚠️ Pause your pools!</b> The classic Synapse bill shock is a forgotten <b>Dedicated SQL pool</b>. On a trial, prefer <b>Serverless SQL</b> and pause/delete anything dedicated.</div>
+</div>
+</section>
+
+<!-- ================= 20 ================= -->
+<section id="adf">
+<h2><span class="ic">🏭</span> 20. Azure Data Factory (ETL/ELT)</h2>
+<div class="card">
+<p><b>Azure Data Factory (ADF)</b> is Azure's cloud tool to <b>move and transform data</b> — the workhorse of data engineering. You build pipelines visually in the <b>ADF Studio</b>.</p>
+
+<h3>The building blocks</h3>
+<table>
+<tr><th>Concept</th><th>What it is</th></tr>
+<tr><td><b>Linked Service</b></td><td>A connection string to a data source/target (e.g. your Storage, SQL, Snowflake)</td></tr>
+<tr><td><b>Dataset</b></td><td>A pointer to specific data (a table, a folder of files) using a Linked Service</td></tr>
+<tr><td><b>Activity</b></td><td>One step (Copy data, run a notebook, run a stored proc)</td></tr>
+<tr><td><b>Pipeline</b></td><td>A sequence/graph of activities = your workflow</td></tr>
+<tr><td><b>Trigger</b></td><td>What starts a pipeline: schedule, tumbling window, or event (file arrives)</td></tr>
+<tr><td><b>Integration Runtime (IR)</b></td><td>The compute that runs the work. <b>Auto-resolve</b> (cloud), <b>Self-hosted</b> (to reach on-prem), or <b>SSIS</b> IR</td></tr>
+<tr><td><b>Mapping Data Flow</b></td><td>Visual, code-free transformations that run on Spark behind the scenes</td></tr>
+</table>
+
+<div class="diagram">
+  <div class="flow">
+    <div class="box">🔌 Linked Service</div><div class="arrow">➜</div>
+    <div class="box t">📄 Dataset</div><div class="arrow">➜</div>
+    <div class="box p">⚙️ Activity</div><div class="arrow">➜</div>
+    <div class="box">📋 Pipeline</div><div class="arrow">➜</div>
+    <div class="box a">⏰ Trigger</div>
+  </div>
+  <div class="cap">How ADF concepts stack up to form a runnable, scheduled workflow.</div>
+</div>
+
+<div class="note"><b>💡 Self-hosted IR</b> is the key piece for <b>migration & hybrid</b>: install it on a machine in your office/on-prem so ADF can reach databases behind your firewall to copy data into Azure.</div>
+<div class="tip"><b>✅ Try this</b> Build a simple <b>Copy Data</b> pipeline: source = a CSV in Blob, sink = an Azure SQL table. It teaches Linked Services, Datasets, and pipelines in 10 minutes.</div>
+</div>
+</section>
+
+<!-- ================= 21 ================= -->
+<section id="databricks">
+<h2><span class="ic">🔥</span> 21. Azure Databricks</h2>
+<div class="card">
+<p><b>Azure Databricks</b> is a first-party Spark platform for large-scale data processing, engineering, and machine learning. You write code in <b>notebooks</b> (Python/SQL/Scala/R) that run on <b>clusters</b>.</p>
+<table>
+<tr><th>Concept</th><th>Meaning</th></tr>
+<tr><td><b>Workspace</b></td><td>The Databricks environment (its own web UI launched from the portal)</td></tr>
+<tr><td><b>Cluster</b></td><td>The Spark compute. ⚠️ Costs money while running — set <b>auto-terminate</b></td></tr>
+<tr><td><b>Notebook</b></td><td>Interactive code + results, cell by cell</td></tr>
+<tr><td><b>Delta Lake</b></td><td>Reliable table format (ACID transactions) on top of Parquet files</td></tr>
+<tr><td><b>Unity Catalog</b></td><td>Central governance/catalog for data &amp; permissions</td></tr>
+<tr><td><b>Jobs</b></td><td>Scheduled/automated notebook or pipeline runs</td></tr>
+</table>
+<div class="warn"><b>⚠️ Cost</b> Databricks clusters are the easiest way to burn trial credit. Always enable <b>"Terminate after N minutes of inactivity"</b> and use the smallest single-node cluster while learning.</div>
+<div class="note"><b>💡 Synapse Spark vs Databricks</b> Both run Spark. Databricks is the dedicated, feature-rich platform; Synapse Spark is convenient if you're already in Synapse. For serious data engineering/ML, learn Databricks.</div>
+</div>
+</section>
+
+<!-- ================= 22 ================= -->
+<section id="migration">
+<h2><span class="ic">🔄</span> 22. Data Migration into Azure</h2>
+<div class="card">
+<p><b>Migration</b> = moving your data (and sometimes whole databases/servers) from on-prem or another cloud <i>into</i> Azure. Azure provides specialized tools depending on size and type.</p>
+
+<h3>The migration toolbox</h3>
+<table>
+<tr><th>Tool</th><th>Use it for</th></tr>
+<tr><td><b>Azure Migrate</b></td><td>The central hub — discover, assess, and migrate servers, VMs &amp; databases</td></tr>
+<tr><td><b>Database Migration Service (DMS)</b></td><td>Migrate databases (SQL Server, Oracle, MySQL, PostgreSQL) with minimal downtime (online/offline)</td></tr>
+<tr><td><b>Data Migration Assistant (DMA)</b></td><td>Desktop tool to assess compatibility &amp; find blockers before moving SQL</td></tr>
+<tr><td><b>Azure Data Factory</b></td><td>Copy data at scale, including via <b>Self-hosted IR</b> for on-prem sources</td></tr>
+<tr><td><b>AzCopy</b></td><td>Fast command-line tool to bulk-copy files into Blob/ADLS</td></tr>
+<tr><td><b>Azure Data Box</b></td><td>A physical appliance Microsoft ships you for <b>huge</b> (TB–PB) offline transfers</td></tr>
+<tr><td><b>Storage Mover / File Sync</b></td><td>Migrate &amp; sync file shares</td></tr>
+</table>
+
+<h3>The typical migration journey</h3>
+<div class="diagram">
+  <div class="flow">
+    <div class="box">🔍 Discover</div><div class="arrow">➜</div>
+    <div class="box t">📋 Assess<br><small>compatibility,<br>sizing, cost</small></div><div class="arrow">➜</div>
+    <div class="box p">🚚 Migrate<br><small>copy/replicate</small></div><div class="arrow">➜</div>
+    <div class="box a">✅ Cutover<br><small>switch over</small></div><div class="arrow">➜</div>
+    <div class="box g">🎯 Optimize</div>
+  </div>
+  <div class="cap">Discover → Assess → Migrate → Cutover → Optimize. The 5 phases of any migration.</div>
+</div>
+
+<h3>Online vs Offline migration</h3>
+<table>
+<tr><th></th><th>Offline</th><th>Online</th></tr>
+<tr><td>Downtime</td><td>Yes (app stops during copy)</td><td>Minimal (continuous sync, then quick cutover)</td></tr>
+<tr><td>Use when</td><td>Small data / maintenance window OK</td><td>24/7 systems that can't stop</td></tr>
+</table>
+<div class="tip"><b>✅ For learning</b> Practice with <b>ADF Copy</b> (cloud-to-cloud) and <b>AzCopy</b> for files. Spin up a small source DB and use <b>DMS</b> to feel a real database migration end-to-end.</div>
+</div>
+</section>
+
+<!-- ================= 23 ================= -->
+<section id="snowflake">
+<h2><span class="ic">❄️</span> 23. Snowflake Connectivity</h2>
+<div class="card">
+<p>Snowflake is a popular cloud data warehouse. You'll often need Azure and Snowflake to talk — for data movement, querying, identity, and security. Here are the main connection patterns.</p>
+
+<h3>① Data movement (ADF ⇄ Snowflake)</h3>
+<div class="diagram">
+  <div class="flow">
+    <div class="box g">🗄️ ADLS / Blob</div><div class="arrow">⇄</div>
+    <div class="box p">🏭 Data Factory<br><small>Snowflake connector</small></div><div class="arrow">⇄</div>
+    <div class="box t">❄️ Snowflake</div>
+  </div>
+  <div class="cap">ADF has a native Snowflake connector to copy data in/out, staging through Azure Storage.</div>
+</div>
+<ul>
+  <li>In ADF, create a <b>Linked Service → Snowflake</b> (account URL, warehouse, DB, user/key).</li>
+  <li>ADF stages data through an Azure <b>Storage</b> account for fast bulk load (Snowflake <code>COPY</code>).</li>
+  <li>Snowflake's <b>external stage</b> can point directly at your ADLS Gen2 container.</li>
+</ul>
+
+<h3>② Identity / SSO (Entra ID → Snowflake)</h3>
+<ul>
+  <li>Add <b>Snowflake</b> from the Entra <b>Enterprise applications</b> gallery.</li>
+  <li>Configure <b>SAML SSO</b> so users log into Snowflake with their Entra account (Section 8).</li>
+  <li>Add <b>SCIM provisioning</b> so Entra auto-creates/updates Snowflake users &amp; roles (Section 9). Snowflake provides the SCIM endpoint &amp; token.</li>
+</ul>
+
+<h3>③ Secure networking (Private Link)</h3>
+<ul>
+  <li>Use <b>Azure Private Link</b> so traffic between Azure and Snowflake stays off the public internet.</li>
+  <li>Store Snowflake credentials/keys in <b>Key Vault</b>, accessed via <b>Managed Identity</b>.</li>
+</ul>
+
+<h3>④ Querying / analytics</h3>
+<ul>
+  <li><b>Power BI</b> has a native <b>Snowflake connector</b> (DirectQuery or Import) — see next section.</li>
+  <li>Databricks/Synapse can read Snowflake via the <b>Spark Snowflake connector</b>.</li>
+</ul>
+<div class="note"><b>💡 Snowflake runs on Azure too</b> You can host a Snowflake account in an Azure region. Keeping it in the <b>same region</b> as your Azure storage reduces latency and egress costs.</div>
+</div>
+</section>
+
+<!-- ================= 24 ================= -->
+<section id="powerbi">
+<h2><span class="ic">📊</span> 24. Power BI Connectivity</h2>
+<div class="card">
+<p><b>Power BI</b> is Microsoft's BI/visualization tool. It uses the <b>same Entra ID identity</b> as Azure, so it integrates tightly. It lives at <span class="path">app.powerbi.com</span> (and is part of <b>Fabric</b>).</p>
+
+<h3>How Power BI connects to data</h3>
+<div class="diagram">
+  <div class="flow">
+    <div class="box t">🗄️ Azure SQL</div>
+    <div class="box t">🏢 Synapse</div>
+    <div class="box t">❄️ Snowflake</div>
+    <div class="box t">🌊 OneLake / ADLS</div>
+  </div>
+  <div class="flow" style="margin-top:8px"><div class="arrow dn" style="transform:rotate(90deg)">➜</div></div>
+  <div class="flow" style="margin-top:8px">
+    <div class="box p">📊 Power BI<br><small>(native connectors)</small></div>
+  </div>
+  <div class="cap">Power BI has built-in connectors for all major Azure & partner data sources.</div>
+</div>
+
+<h3>Import vs DirectQuery</h3>
+<table>
+<tr><th></th><th>Import</th><th>DirectQuery</th></tr>
+<tr><td>How</td><td>Copies data into Power BI</td><td>Queries the source live each time</td></tr>
+<tr><td>Speed</td><td>Very fast reports</td><td>Depends on source</td></tr>
+<tr><td>Freshness</td><td>As of last refresh</td><td>Always current</td></tr>
+<tr><td>Best for</td><td>Most dashboards</td><td>Huge or real-time data</td></tr>
+</table>
+
+<h3>Key connectivity pieces</h3>
+<table>
+<tr><th>Concept</th><th>What it is</th></tr>
+<tr><td><b>On-premises Data Gateway</b></td><td>A bridge so Power BI (cloud) can securely reach on-prem or VNet-private data sources</td></tr>
+<tr><td><b>Workspace</b></td><td>A container for reports, datasets &amp; dashboards (with roles)</td></tr>
+<tr><td><b>Dataset / Semantic model</b></td><td>The reusable data model reports are built on</td></tr>
+<tr><td><b>Scheduled refresh</b></td><td>Auto-pull latest data for Import models</td></tr>
+<tr><td><b>Row-Level Security (RLS)</b></td><td>Show each user only their permitted rows</td></tr>
+</table>
+<div class="tip"><b>✅ Identity bonus</b> Because Power BI uses Entra ID, your <b>SSO, groups, and Conditional Access</b> all apply automatically. Assign report access via Entra <b>groups</b>.</div>
+<div class="note"><b>💡 Fabric link</b> Power BI is the visualization layer of Microsoft Fabric, reading directly from <b>OneLake</b> — often with no data copy needed (DirectLake mode).</div>
+</div>
+</section>
+
+<!-- ================= 25 ================= -->
+<section id="cli">
+<h2><span class="ic">⌨️</span> 25. Beyond the Portal — CLI, PowerShell, ARM</h2>
+<div class="card">
+<p>The portal is great for learning, but pros automate. Same actions, different "doors":</p>
+<table>
+<tr><th>Tool</th><th>What it is</th><th>Example</th></tr>
+<tr><td><b>Azure CLI</b></td><td>Cross-platform command line (<code>az ...</code>)</td><td><code>az group create -n rg-demo -l eastus</code></td></tr>
+<tr><td><b>Azure PowerShell</b></td><td>PowerShell cmdlets (<code>New-Az...</code>)</td><td><code>New-AzResourceGroup -Name rg-demo -Location eastus</code></td></tr>
+<tr><td><b>Cloud Shell</b></td><td>Browser terminal with CLI/PowerShell pre-installed</td><td>Click <span class="kbd">&gt;_</span> in the top bar</td></tr>
+<tr><td><b>ARM templates</b></td><td>JSON files describing resources (Infrastructure as Code)</td><td>Deploy entire environments repeatably</td></tr>
+<tr><td><b>Bicep</b></td><td>Friendlier language that compiles to ARM</td><td>Cleaner IaC than raw JSON</td></tr>
+<tr><td><b>Terraform</b></td><td>Popular 3rd-party IaC tool, multi-cloud</td><td>Manage Azure with HCL</td></tr>
+</table>
+<div class="tip"><b>✅ Start simple</b> Open <b>Cloud Shell</b> and run <code>az account show</code> then <code>az group list -o table</code>. You'll see the same data the portal shows — that's the "aha" moment that the portal is just a UI over an API.</div>
+</div>
+</section>
+
+<!-- ================= 26 ================= -->
+<section id="explore">
+<h2><span class="ic">🧪</span> 26. Your Trial Lab Plan (hands-on path)</h2>
+<div class="card">
+<p>A suggested order to explore your trial safely. Each step builds skills from this guide. <b>Delete each resource group when done.</b></p>
+
+<details open>
+<summary>Week 1 — Foundations & Admin</summary>
+<ol class="steps">
+  <li>Set a <b>Budget</b> with alerts in Cost Management (do this first!).</li>
+  <li>Create a <b>resource group</b> <code>rg-lab-foundations</code> and add tags.</li>
+  <li>Explore <b>Entra ID</b>: add a test user and a group.</li>
+  <li>Practice <b>RBAC</b>: assign the test user <b>Reader</b> on the RG via IAM.</li>
+  <li>Turn on <b>Security Defaults</b> (MFA) and look at Conditional Access.</li>
+</ol>
+</details>
+
+<details>
+<summary>Week 2 — Identity Integrations (SSO & SCIM)</summary>
+<ol class="steps">
+  <li>Go to <b>Enterprise applications</b>; add a gallery app (e.g. a free SaaS or Snowflake trial).</li>
+  <li>Configure <b>SAML SSO</b> and assign your test user.</li>
+  <li>If the app supports it, set up <b>SCIM provisioning</b> and watch a user auto-create.</li>
+  <li>Review the <b>provisioning logs</b> &amp; <b>sign-in logs</b>.</li>
+</ol>
+</details>
+
+<details>
+<summary>Week 3 — Data Engineering Core</summary>
+<ol class="steps">
+  <li>Create an <b>ADLS Gen2</b> storage account; upload a sample CSV.</li>
+  <li>Create an <b>Azure SQL Database</b> (vCore serverless) and use the Query editor.</li>
+  <li>Create a <b>Data Factory</b>; build a <b>Copy</b> pipeline CSV → SQL table.</li>
+  <li>Store the SQL password in <b>Key Vault</b>; reference it from ADF.</li>
+  <li>(Optional) Spin up a tiny <b>Databricks</b> single-node cluster &amp; read the CSV (then terminate!).</li>
+</ol>
+</details>
+
+<details>
+<summary>Week 4 — Migration & Connectivity</summary>
+<ol class="steps">
+  <li>Try <b>AzCopy</b> to bulk-upload files to Blob.</li>
+  <li>Explore <b>Azure Migrate</b> &amp; <b>DMS</b> (just the setup screens to learn the flow).</li>
+  <li>If using Snowflake: create an ADF <b>Snowflake linked service</b> and copy a table.</li>
+  <li>Connect <b>Power BI Desktop</b> to your Azure SQL/Snowflake; build one chart.</li>
+  <li>Publish to a Power BI <b>workspace</b> and set up scheduled refresh.</li>
+</ol>
+</details>
+
+<div class="warn"><b>⚠️ End-of-lab checklist (every time)</b> Stop/terminate clusters &amp; VMs · Pause dedicated SQL pools · <b>Delete the resource group</b> · Check Cost Analysis the next day to confirm spend dropped to ~0.</div>
+</div>
+</section>
+
+<!-- ================= 27 ================= -->
+<section id="glossary">
+<h2><span class="ic">📚</span> 27. Quick Glossary</h2>
+<div class="card">
+<table>
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td>Tenant</td><td>Your organization's identity directory (Entra ID instance)</td></tr>
+<tr><td>Subscription</td><td>Billing & quota boundary; resources live inside one</td></tr>
+<tr><td>Resource Group</td><td>Folder grouping related resources</td></tr>
+<tr><td>Blade</td><td>A sliding panel in the portal</td></tr>
+<tr><td>Entra ID</td><td>Identity service (formerly Azure AD)</td></tr>
+<tr><td>RBAC</td><td>Role-Based Access Control (who can do what, where)</td></tr>
+<tr><td>AuthN / AuthZ</td><td>Authentication (who) / Authorization (allowed to do)</td></tr>
+<tr><td>SSO</td><td>Single Sign-On — one login for many apps</td></tr>
+<tr><td>SAML / OIDC</td><td>SSO protocols (older XML / modern token)</td></tr>
+<tr><td>SCIM</td><td>Auto user provisioning standard</td></tr>
+<tr><td>IdP / SP</td><td>Identity Provider / Service Provider</td></tr>
+<tr><td>MFA</td><td>Multi-Factor Authentication</td></tr>
+<tr><td>Conditional Access</td><td>IF→THEN sign-in policy engine</td></tr>
+<tr><td>PIM</td><td>Privileged Identity Management (just-in-time admin)</td></tr>
+<tr><td>Managed Identity</td><td>Password-free identity for a resource</td></tr>
+<tr><td>Service Principal</td><td>Non-human "robot" identity for apps</td></tr>
+<tr><td>Key Vault</td><td>Secure store for secrets/keys/certificates</td></tr>
+<tr><td>ADLS Gen2</td><td>Data Lake Storage (storage + hierarchical namespace)</td></tr>
+<tr><td>Blob</td><td>Object/file storage</td></tr>
+<tr><td>ADF</td><td>Azure Data Factory (ETL/orchestration)</td></tr>
+<tr><td>Linked Service</td><td>A connection definition in ADF/Synapse</td></tr>
+<tr><td>Integration Runtime</td><td>The compute that runs ADF activities (incl. self-hosted for on-prem)</td></tr>
+<tr><td>Synapse</td><td>Unified analytics warehouse + Spark + pipelines</td></tr>
+<tr><td>Fabric / OneLake</td><td>Newer SaaS analytics platform / its unified storage</td></tr>
+<tr><td>Databricks</td><td>Spark platform for big data &amp; ML</td></tr>
+<tr><td>Delta Lake</td><td>ACID table format on Parquet</td></tr>
+<tr><td>DMS / DMA</td><td>Database Migration Service / Assistant</td></tr>
+<tr><td>Data Box</td><td>Physical appliance for huge offline transfers</td></tr>
+<tr><td>Private Link / Endpoint</td><td>Private, internet-free connection to a service</td></tr>
+<tr><td>DirectQuery / Import</td><td>Power BI live-query vs copy-in modes</td></tr>
+<tr><td>Data Gateway</td><td>Bridge for Power BI to reach private/on-prem data</td></tr>
+<tr><td>KQL</td><td>Kusto Query Language (logs/analytics)</td></tr>
+<tr><td>ARM / Bicep</td><td>Infrastructure-as-Code for Azure</td></tr>
+</table>
+</div>
+
+<div class="card" style="background:linear-gradient(135deg,#eef6ff,#f4eefb)">
+  <h3>🎯 You're ready to explore!</h3>
+  <p>You now understand the portal layout, the hierarchy, identity & admin (Entra, RBAC, SSO, SCIM), cost control, the data engineering stack, migration tools, and how Snowflake & Power BI connect. Open your trial, set a budget, and start with the <a href="#explore">Week 1 lab</a>.</p>
+  <p class="lead">Tip: keep this file open in a browser tab as your cheat-sheet while you click around Azure. 🚀</p>
+</div>
+</section>
+
+<footer>
+  Azure Portal Fundamentals — a visual learning guide · Built for hands-on trial exploration<br>
+  Note: Azure renames & moves things often. If a menu name differs, use the portal's <b>global search</b> to find it. · Generated 2026
+</footer>
+
+</main>
+</div>
+</body>
+</html>

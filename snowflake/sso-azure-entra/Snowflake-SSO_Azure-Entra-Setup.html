@@ -151,6 +151,7 @@
     <a href="#cert-changes" class="sub">What changes on renewal</a>
     <a href="#cert-renew" class="sub">How to renew safely</a>
     <a href="#step0">0. Before you start</a>
+    <a href="#p1p2" class="sub">What is Entra ID P1/P2?</a>
     <a href="#step1">1. Snowflake identifiers</a>
     <a href="#step2">2. Create the Azure app</a>
     <a href="#step3">3. Configure SAML SSO</a>
@@ -265,6 +266,7 @@
         <tr><td><strong>NameID</strong></td><td>The piece of the note (usually email) that says <em>which</em> user it is.</td></tr>
         <tr><td><strong>Certificate</strong></td><td>The digital signature key Snowflake uses to confirm the note really came from your Microsoft.</td></tr>
         <tr><td><strong>ACS / Reply URL</strong></td><td>The exact Snowflake address where Microsoft sends the signed note (<code>.../fed/login</code>).</td></tr>
+        <tr><td><strong>Entra ID P1 / P2</strong></td><td>Paid Entra ID <em>tiers</em>. Free = basic sign-in &amp; SSO. <strong>P1</strong> adds Conditional Access, group-to-app assignment &amp; SCIM provisioning. <strong>P2</strong> adds risk detection, PIM &amp; access reviews. See the box in <a href="#step0">Step 0</a>.</td></tr>
       </table>
 
       <div class="callout tip">
@@ -500,6 +502,29 @@ ALTER SECURITY INTEGRATION azure_entra_sso
       <div class="callout warn">
         <span class="ct">⚠️ Trial limitation to know up front</span>
         <p>Entra ID's <em>automatic user provisioning</em> (SCIM) to Snowflake requires a <strong>Microsoft Entra ID P1/P2 license</strong> (the free trial of Entra ID P2 covers this for 30 days). <strong>SSO sign-in itself does NOT require a premium license</strong> — the free tier is enough. This guide focuses on SSO; provisioning is covered as an optional add-on in <a href="#appB">Appendix B</a>.</p>
+      </div>
+
+      <h3 id="p1p2">What is "Entra ID P1 / P2"? (the term used throughout this guide)</h3>
+      <p>Entra ID (formerly Azure AD) is sold in <strong>tiers</strong>. The basic identity service — letting people sign in and use SSO — is <strong>Free</strong>. The advanced security and automation features cost extra and are sold as <strong>Entra ID P1</strong> and <strong>P2</strong> (these are the same licenses bundled inside Microsoft 365 <strong>E3</strong> and <strong>E5</strong>). So when this guide says <em>"requires P1/P2,"</em> it just means <em>"that feature is switched off unless your tenant has bought that plan."</em></p>
+
+      <div class="callout analogy">
+        <span class="ct">🏨 Think of hotel room tiers</span>
+        <p><strong>Free</strong> = a standard room (a bed — you can sleep = users can sign in &amp; do SSO). <strong>P1</strong> = an upgraded room with extras (Conditional Access rules, assigning whole <em>groups</em> to an app, and SCIM auto-provisioning). <strong>P2</strong> = the full suite — everything in P1 <em>plus</em> a concierge watching for trouble (risk-based sign-in detection, PIM just-in-time admin, access reviews). Each tier <strong>includes everything below it</strong>.</p>
+      </div>
+
+      <table>
+        <tr><th>Feature</th><th>Free</th><th>P1</th><th>P2</th><th>Used in this guide?</th></tr>
+        <tr><td><strong>SAML SSO</strong> sign-in to Snowflake</td><td>✅</td><td>✅</td><td>✅</td><td>✅ Yes — the whole point. Works on Free.</td></tr>
+        <tr><td>Assign <strong>individual users</strong> to the app</td><td>✅</td><td>✅</td><td>✅</td><td>✅ Yes — Step 6 (Free is enough).</td></tr>
+        <tr><td>Assign a whole <strong>group</strong> to the app</td><td>❌</td><td>✅</td><td>✅</td><td>⚠️ Optional — needs P1 (Step 6 note).</td></tr>
+        <tr><td><strong>SCIM</strong> auto user provisioning</td><td>❌</td><td>✅</td><td>✅</td><td>⚠️ Optional — needs P1 (Appendix B).</td></tr>
+        <tr><td><strong>Conditional Access</strong> (e.g. require MFA off-network)</td><td>❌</td><td>✅</td><td>✅</td><td>Not required for SSO setup.</td></tr>
+        <tr><td><strong>Identity Protection / PIM / Access Reviews</strong></td><td>❌</td><td>❌</td><td>✅</td><td>Not required for SSO setup.</td></tr>
+      </table>
+
+      <div class="callout tip">
+        <span class="ct">✅ Bottom line for this guide</span>
+        <p>You can complete the <strong>entire SSO setup on the Free tier</strong>. You only need <strong>P1/P2</strong> for the <em>optional</em> conveniences: assigning groups (instead of one user at a time) and SCIM auto-provisioning. On a trial, activate the <strong>30-day Entra ID P2 trial</strong> (<span style="font-family:Consolas,monospace;background:#11243a;color:#9fd2ff;padding:2px 7px;border-radius:6px">Entra ID → overview → Try / upgrade</span>) if you want to test those — but don't build a permanent dependency on them before checking the license cost.</p>
       </div>
     </section>
 

@@ -399,6 +399,98 @@
 <b>Authentication (AuthN)</b> = "Who are you?" (login) — handled by Entra ID.<br>
 <b>Authorization (AuthZ)</b> = "What are you allowed to do?" — handled by RBAC (next section).</div>
 
+<h3>🆚 App Registration vs Enterprise Application — the deep dive</h3>
+<p>This is the <b>#1 confusing pair</b> in Entra ID, because they're closely related and the portal gives each its own menu. Once the mental model clicks, it's actually simple. Let's build it up slowly.</p>
+
+<h4>The one-sentence version</h4>
+<div class="key"><b>🔑 In plain English</b><br>
+<b>App Registration</b> = the <b>definition / blueprint</b> of an app — created in the tenant that <i>owns</i> the app.<br>
+<b>Enterprise Application</b> = the <b>local instance</b> of an app that is allowed to <i>run inside your tenant</i> (this instance is technically called a <b>service principal</b>).</div>
+
+<h4>🏪 The franchise restaurant analogy</h4>
+<p>Imagine a restaurant chain like <b>"Pizza Hut"</b>:</p>
+<div class="diagram">
+  <div class="flow">
+    <div class="box p">📐 App Registration<br><small>The global brand<br>+ recipe book<br>(the blueprint)</small></div>
+    <div class="arrow">➜ creates ➜</div>
+    <div class="box t">🏪 Enterprise Application<br><small>The actual branch<br>open in YOUR town<br>(the local instance)</small></div>
+  </div>
+  <div class="cap">One blueprint (registration) → one branch (enterprise app / service principal) in each town (tenant) where the brand operates.</div>
+</div>
+<ul>
+  <li><b>App Registration = head office + master recipe.</b> It defines what the restaurant <i>is</i>: name, logo, menu, and the rules a branch follows. It exists <b>once</b>, in the brand's <b>home tenant</b>.</li>
+  <li><b>Enterprise Application = a physical branch.</b> When Pizza Hut opens in <i>your</i> town, that local branch is a separate, real thing you manage locally — set its opening hours, decide who's allowed in, fire a bad manager — <b>without changing the global brand</b>.</li>
+  <li>One blueprint can spawn <b>many branches</b> — one in every town (tenant). Microsoft Teams has <b>one</b> app registration (Microsoft owns it) but a <b>separate</b> enterprise application appears in <b>every</b> company's tenant that uses Teams.</li>
+</ul>
+
+<h4>🛂 Another analogy: passport vs visa</h4>
+<div class="note"><b>Passport vs Visa</b><br>
+The <b>App Registration</b> is the app's <b>passport</b> — issued by its <i>home country</i> (home tenant), it proves "this is who I am" globally.<br>
+The <b>Enterprise Application</b> is the <b>visa / entry stamp</b> in <i>your</i> country (your tenant) — "this specific app is permitted to operate here, with these permissions, for these people."</div>
+
+<h4>So when do I use which? (the practical rule)</h4>
+<table>
+<tr><th>If you want to…</th><th>You use…</th><th>Where in portal</th></tr>
+<tr><td>Build <b>your own</b> app/script that signs in users or calls Azure APIs</td><td><b>App Registration</b> (auto-creates a matching Enterprise App too)</td><td>Entra ID → App registrations → + New registration</td></tr>
+<tr><td>Connect a <b>ready-made SaaS</b> app for SSO (Snowflake, Salesforce, Tableau, ServiceNow…)</td><td><b>Enterprise Application</b> (add from the gallery)</td><td>Entra ID → Enterprise applications → + New application</td></tr>
+<tr><td>Give a <b>script / CI-CD pipeline / daemon</b> a "robot login" to Azure</td><td><b>App Registration</b> (creates a service principal with a client secret/cert)</td><td>Entra ID → App registrations → + New registration</td></tr>
+<tr><td>Control <b>who is allowed to use</b> an app, or turn on <b>SCIM provisioning</b></td><td><b>Enterprise Application</b> (Users &amp; groups / Provisioning blades)</td><td>Entra ID → Enterprise applications → pick the app</td></tr>
+<tr><td>Manage the app's <b>credentials, redirect URIs, API permissions, secrets</b></td><td><b>App Registration</b></td><td>Entra ID → App registrations → pick the app</td></tr>
+</table>
+
+<div class="key"><b>🔑 The golden rule</b><br>
+Asking <b>"what IS this app and what can it request?"</b> (secrets, redirect URLs, API permissions) → go to <b>App Registration</b>.<br>
+Asking <b>"is this app allowed in MY org, and who can use it?"</b> (assign users, SSO, provisioning, consent) → go to <b>Enterprise Application</b>.</div>
+
+<h4>How they relate (very important)</h4>
+<div class="diagram">
+<div class="tree">
+  <div class="lvl"><div class="node n0">📐 Application object (App Registration)</div><span class="desc">Lives in the home tenant. The global definition. There is exactly ONE.</span></div>
+  <div class="lvl"><div class="node n2">🏪 Service Principal (Enterprise App) — Tenant A</div><span class="desc">One local instance per tenant that uses the app.</span></div>
+  <div class="lvl"><div class="node n2">🏪 Service Principal (Enterprise App) — Tenant B</div><span class="desc">A separate instance — managed independently.</span></div>
+  <div class="lvl"><div class="node n2">🏪 Service Principal (Enterprise App) — Tenant C</div><span class="desc">…and so on, one per tenant.</span></div>
+</div>
+<div class="cap">1 App Registration (blueprint) → many Enterprise Applications (one local instance / service principal per tenant).</div>
+</div>
+
+<div class="note"><b>💡 Why you sometimes see BOTH for the same app</b><br>
+When <b>you</b> create an App Registration in your own tenant, Azure <i>automatically</i> creates a matching Enterprise Application (service principal) in the <b>same</b> tenant. That's why your custom app shows up in <b>both</b> menus — they're two faces of the same app: the <b>registration</b> face (define it) and the <b>enterprise</b> face (run &amp; govern it). For a third-party SaaS like Snowflake you usually see only the <b>Enterprise Application</b>, because Snowflake owns the registration in <i>their</i> tenant — you just get the local instance.</div>
+
+<h4>🛠️ Two concrete examples you'll actually hit</h4>
+<details>
+<summary>Example A — Connecting Snowflake for SSO (a SaaS app you don't own)</summary>
+<p>Snowflake already built and registered their app in Snowflake's own Entra tenant. You're not building anything — you just want <i>your</i> employees to log into Snowflake with their company account.</p>
+<ol class="steps">
+  <li>Go to <span class="path">Entra ID → Enterprise applications → + New application</span>.</li>
+  <li>Search the gallery for <b>"Snowflake"</b> and add it. → An <b>Enterprise Application</b> now exists in your tenant.</li>
+  <li>Open it → <b>Single sign-on</b> → configure SAML. Then <b>Users and groups</b> → assign who can use it. Optionally <b>Provisioning</b> → set up SCIM.</li>
+</ol>
+<p><b>You never touched App registrations.</b> Everything happened on the Enterprise Application side, because you're <i>consuming</i> someone else's app, not <i>defining</i> one.</p>
+</details>
+<details>
+<summary>Example B — A Python script that reads secrets from Key Vault (an app you DO own)</summary>
+<p>You're writing your own automation. It needs a non-human "robot identity" to authenticate to Azure.</p>
+<ol class="steps">
+  <li>Go to <span class="path">Entra ID → App registrations → + New registration</span>. Name it <code>kv-reader-bot</code>.</li>
+  <li>Under <b>Certificates &amp; secrets</b>, create a <b>client secret</b> (or upload a certificate). Note the <b>Client ID</b> + <b>Tenant ID</b>.</li>
+  <li>Azure auto-created a matching <b>Enterprise Application</b> (the service principal). Give <i>that</i> identity an RBAC role (e.g. <b>Key Vault Secrets User</b>) on your Key Vault.</li>
+  <li>Your script signs in with Client ID + secret + Tenant ID → gets a token → reads the secret.</li>
+</ol>
+<p>Here you started on the <b>App registration</b> side (define the identity + credentials), and the <b>Enterprise Application</b> side is where that identity gets <i>permissions</i>. Both faces, one app.</p>
+</details>
+
+<table>
+<tr><th>Quick contrast</th><th>📐 App Registration</th><th>🏪 Enterprise Application</th></tr>
+<tr><td>Mental model</td><td>The blueprint / definition</td><td>The running local instance (service principal)</td></tr>
+<tr><td>Who creates it</td><td>The app's <b>owner / developer</b></td><td>Appears when an app is <b>added / used</b> in a tenant</td></tr>
+<tr><td>Lives where</td><td>The app's <b>home tenant</b> (one only)</td><td><b>Each</b> tenant that uses the app (many)</td></tr>
+<tr><td>You go here to…</td><td>Set secrets, certs, redirect URIs, API permissions</td><td>Assign users, set up SSO/SAML, SCIM, conditional access</td></tr>
+<tr><td>Typical for</td><td>Apps/scripts <b>you build</b></td><td>SaaS apps <b>you connect</b> (Snowflake, Power BI, Salesforce)</td></tr>
+<tr><td>Underlying object</td><td><code>Application</code> object</td><td><code>ServicePrincipal</code> object</td></tr>
+</table>
+
+<div class="tip"><b>✅ Rule of thumb to remember forever</b> <b>You built it → start at App Registration.</b> <b>You're connecting someone else's SaaS → start at Enterprise Applications.</b> And for apps you own, both entries are just two views of the same thing.</div>
+
 <h4>Admin roles inside Entra ID</h4>
 <p>Entra has its own roles (separate from Azure RBAC) for <i>directory</i> tasks:</p>
 <div>

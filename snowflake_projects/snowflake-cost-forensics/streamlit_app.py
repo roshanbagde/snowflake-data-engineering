@@ -328,6 +328,29 @@ def load_fingerprints(start: date, end1: date, mid: date, whs) -> pd.DataFrame:
     """)
 
 
+def load_db_rollup(start: date, end1: date, mid: date, whs) -> pd.DataFrame:
+    # Approximate compute spend by the query's session DATABASE_NAME. Snowflake
+    # bills compute per-warehouse, not per-database, so this is an attribution
+    # heuristic; DATABASE_NAME is the active database when the query ran (NULL if
+    # none was set). Early/late halves expose which databases are growing.
+    return run_sql(f"""
+        SELECT COALESCE(database_name, '(no database context)') AS DATABASE_NAME,
+               COUNT(*) AS RUNS,
+               SUM(execution_time) / 1000 AS TOTAL_EXEC_S,
+               SUM(execution_time / 3600000 * {WH_RATE_SQL}) AS EST_CREDITS,
+               SUM(IFF(start_time <  '{mid}', execution_time / 3600000 * {WH_RATE_SQL}, 0)) AS EST_CREDITS_EARLY,
+               SUM(IFF(start_time >= '{mid}', execution_time / 3600000 * {WH_RATE_SQL}, 0)) AS EST_CREDITS_LATE
+        FROM {AU}.QUERY_HISTORY
+        WHERE start_time >= '{start}' AND start_time < '{end1}'
+          AND warehouse_size IS NOT NULL
+          AND execution_time > 0
+          {in_filter('warehouse_name', whs)}
+        GROUP BY 1
+        ORDER BY EST_CREDITS DESC
+        LIMIT 100
+    """)
+
+
 def load_hash_trend(qhash: str, start: date, end1: date, gran: str) -> pd.DataFrame:
     return run_sql(f"""
         SELECT DATE_TRUNC('{gran}', start_time)::DATE AS BUCKET,
@@ -379,6 +402,14 @@ SERVERLESS_VIEWS = {
         view="REPLICATION_USAGE_HISTORY",
         obj="database_name",
         extra=", SUM(bytes_transferred)/POWER(1024,3) AS GB_TRANSFERRED",
+    ),
+    # ACCOUNT_USAGE reports DMF (data quality monitoring) credits by time only —
+    # it does not attribute them to individual tables/metrics — so we roll the
+    # whole feature up as one object and rely on the day-trend + changepoint.
+    "Data quality monitoring": dict(
+        view="DATA_QUALITY_MONITORING_USAGE_HISTORY",
+        obj="'Data quality monitoring (account-wide)'",
+        extra="",
     ),
 }
 
@@ -640,6 +671,23 @@ def tab_queries(ctx):
     if fps.empty:
         st.info("No query history in the selected window (or hashes unavailable).")
         return
+
+    st.subheader("Estimated compute by database")
+    dbroll = load_db_rollup(ctx["start"], ctx["end1"], ctx["mid"], ctx["whs"])
+    if not dbroll.empty:
+        dbroll = dbroll.copy()
+        dbroll["DELTA_PCT"] = np.where(
+            dbroll["EST_CREDITS_EARLY"] > 0,
+            (dbroll["EST_CREDITS_LATE"] / dbroll["EST_CREDITS_EARLY"] - 1) * 100, np.nan)
+        explain("Snowflake bills compute per-warehouse, not per-database, so this rolls EST_CREDITS "
+                "up by each query's session DATABASE_NAME — an approximation of which database drives "
+                "compute. The early/late split (DELTA_PCT) shows which databases are growing.")
+        st.dataframe(dbroll.round(2), use_container_width=True, hide_index=True)
+        csv_download(dbroll.round(2), "compute_by_database")
+        top_db = dbroll.iloc[0]
+        st.caption(f"Top database by estimated compute: **{top_db['DATABASE_NAME']}** "
+                   f"(~{top_db['EST_CREDITS']:,.1f} est. credits).")
+    st.divider()
 
     fps = fps.copy()
     fps["REGRESSION_PCT"] = np.where(

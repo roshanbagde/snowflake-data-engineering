@@ -35,8 +35,8 @@ no external calls). Built to run on an X-Small warehouse.
 | Overview | Total credits, prior-period delta + verdict, trend, service-type split, biggest contributor |
 | When did it start? | Changepoints via trailing 28-day median baseline (z>2 or +50%) for total / warehouse / service |
 | Warehouses | Rank by spend & increase; per-warehouse idle %, queue ratio, resize/resume churn, load profile |
-| Query forensics | Per `query_parameterized_hash`: cost, early-vs-late duration (regressions), spill, pruning, new queries |
-| Service deep-dives | Auto-clustering, MVs, Snowpipe, search optimization, serverless tasks, QAS, replication, data transfer |
+| Query forensics | Per `query_parameterized_hash`: cost, early-vs-late duration (regressions), spill, pruning, new queries — plus an **estimated-compute-by-database** rollup (which DB drives spend & which is growing) |
+| Service deep-dives | Auto-clustering, MVs, Snowpipe, search optimization, serverless tasks, QAS, replication, **data quality monitoring (DMF)**, data transfer |
 | Recommendations | Rule-based fixes naming the exact warehouse / table / query hash + triggering metric |
 | Ask | Deterministic Q&A "chatbot" — keyword-matched (no AI) routing to the same analyses, plain-English answers. Also exports a ready-to-paste **AI prompt** embedding current findings, for use in an external assistant |
 
@@ -47,6 +47,12 @@ no external calls). Built to run on an X-Small warehouse.
   (`st.cache_data(ttl=900)`).
 - Per-query credit attribution (`EST_CREDITS`) = execution time × warehouse-size
   rate — a heuristic for ranking, not a billed number.
+- **By-database** compute is an attribution heuristic too: Snowflake bills compute
+  per *warehouse*, not per *database*, so the rollup sums `EST_CREDITS` by each
+  query's session `DATABASE_NAME`. Directional, not a billed figure.
+- **Data quality monitoring (DMF)** credits are reported by `ACCOUNT_USAGE` at the
+  account/time level only (not per table), so that deep-dive shows the trend and
+  changepoint, not a per-table breakdown.
 
 ## License
 MIT — see [LICENSE](LICENSE).

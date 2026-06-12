@@ -1,0 +1,21 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Editor / IDE
+.vscode/
+.idea/
+
+# Local secrets / connections (never commit Snowflake credentials)
+.env
+*.env
+connections.toml
+config.toml
+secrets.toml

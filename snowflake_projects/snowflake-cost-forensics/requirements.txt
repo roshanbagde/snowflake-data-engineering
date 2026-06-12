@@ -1,0 +1,7 @@
+# Streamlit-in-Snowflake provides streamlit, pandas, and numpy in the base
+# environment. When deploying via Snowsight, add `plotly` from the Packages
+# picker. These pins are for local linting/reference only.
+streamlit
+pandas
+numpy
+plotly
